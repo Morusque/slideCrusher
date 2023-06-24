@@ -9,19 +9,10 @@ import java.util.Random;
 
 import ddf.minim.*;
 
-// automatically normalize display
-
-// todo mode with difference instead of integral, or fixed length
-// cubic interpolation
-// IIR filter
-
-// preview files from inside then export
-// exported as filename_processed
-
-// custom UI
-// actual UI values
 // tooltip explanations
-// display max sample time as Hz
+// exported as filename_processed or dialog
+// make process/export/play(s)/remove buttons from inside the slots 
+// actual UI values, display max sample time as Hz
 
 // parameters
 ParameterSet previewSet = new ParameterSet();
@@ -44,7 +35,7 @@ Minim minim;
 AudioSample sample;
 
 void setup() {
-  size(800, 600);
+  size(800, 700);
   drop = new SDrop(this);
   minim = new Minim(this);
   for (int i=0; i<displaySine.length; i++) displaySine[i] = sin(pow((float)(i+175)/100, 2))*(1-(float)i/displaySine.length);
@@ -155,7 +146,7 @@ void draw() {
   // difference
   for (int i=0; i<displaySine.length; i++) {
     stroke(0xCC, 0xCC, 0xFF);
-    line(i, constrain((float)displaySine[i]*previewGain, -1, 1)*displayMax, i, constrain((float)displayInterp[i]*previewGain, -1, 1)*displayMax);
+    line(i, -constrain((float)displaySine[i]*previewGain, -1, 1)*displayMax, i, -constrain((float)displayInterp[i]*previewGain, -1, 1)*displayMax);
   }
   // original
   stroke(0, 0x50, 0);
@@ -163,7 +154,7 @@ void draw() {
   noFill();
   beginShape();
   for (int i=0; i<displaySine.length; i++) {
-    vertex(i, constrain((float)displaySine[i]*previewGain, -1, 1)*displayMax);
+    vertex(i, -constrain((float)displaySine[i]*previewGain, -1, 1)*displayMax);
   }
   endShape();
   // reconstructed
@@ -172,7 +163,7 @@ void draw() {
   noFill();
   beginShape();
   for (int i=0; i<displayInterp.length; i++) {
-    vertex(i, constrain((float)displayInterp[i]*previewGain, -1, 1)*displayMax);
+    vertex(i, -constrain((float)displayInterp[i]*previewGain, -1, 1)*displayMax);
   }
   endShape();
   popMatrix();
@@ -204,41 +195,78 @@ double[] computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet) {
   double[] waveInComp = new double[waveIn.length];
   for (int i = 0; i < waveIn.length; i++) waveInComp[i] = Math.tanh(waveIn[i]*pSet.compressionFactor);
   double[] waveOut = new double[waveIn.length];
+  double previousSample = 0;
   for (int i = 0; i < waveOut.length; ) {
+    previousSample = waveOut[max(0, i-1)];
     if (slot!=null) slot.updateProgressSample((float)i/waveOut.length);
     double sampleStart = waveInComp[i];
     double sampleEnd = sampleStart;
     int slideTimeSmp = 1;
-    float maxSlideTimeSmp = min(pSet.defaultMaxSlideTimeSmp, waveIn.length-i);
-    for (int j = i+1; j < i+maxSlideTimeSmp; j++) {
-      slideTimeSmp = floor((float)j-i);
-      float totalDifference = 0;
-      sampleEnd = waveInComp[j];
-      for (int k = i; k < j; k++) {
-        double actualSample = waveInComp[k];
-        double interpolatedSample = sampleStart;
-        if (pSet.interpolationType == 1) interpolatedSample = lerp((float)sampleStart, (float)sampleEnd, ((float)k-i)/((float)(slideTimeSmp)));
-        if (pSet.interpolationType == 2) interpolatedSample = (k==i)?actualSample:0;
-        if (pSet.interpolationType == 3) interpolatedSample = map((float)sCurve(map(((float)k-i)/(float)(slideTimeSmp), 0, 1, -1, 1)), -1, 1, (float)sampleStart, (float)sampleEnd);
-        if (pSet.interpolationType == 4) interpolatedSample = 0;
-        if (pSet.sinusAddition!=0) interpolatedSample += sin((float)(k-i)/(float)slideTimeSmp*TWO_PI)*abs((float)sampleStart-(float)sampleEnd)*pSet.sinusAddition;
-        totalDifference += abs((float)(interpolatedSample-actualSample));
-      }
-      if (totalDifference > pSet.totalDifferenceThreshold && slideTimeSmp > 1) {
-        slideTimeSmp -= 1;
-        sampleEnd = waveInComp[i+slideTimeSmp];
-        break;
+    float maxSlideTimeSmp = min(max(pSet.defaultMaxSlideTimeSmp, 1), waveIn.length-i);
+    if (pSet.optimizationMethod==0) {
+      slideTimeSmp = floor(maxSlideTimeSmp);
+      sampleEnd = waveInComp[min(i+slideTimeSmp,waveIn.length-1)];
+    }
+    if (pSet.optimizationMethod==1) {
+      for (int j = i+1; j < i+maxSlideTimeSmp; j++) {
+        slideTimeSmp = floor((float)j-i);
+        float totalDifference = 0;
+        sampleEnd = waveInComp[j];
+        double previousSampleTest = previousSample;
+        for (int k = i; k < j; k++) {
+          double actualSample = waveInComp[k];
+          double interpolatedSample = sampleStart;
+          if (pSet.interpolationType == 1) interpolatedSample = lerp((float)sampleStart, (float)sampleEnd, ((float)k-i)/((float)(slideTimeSmp)));
+          if (pSet.interpolationType == 2) interpolatedSample = map((float)sCurve(map(((float)k-i)/(float)(slideTimeSmp), 0, 1, -1, 1)), -1, 1, (float)sampleStart, (float)sampleEnd);
+          if (pSet.interpolationType == 3) interpolatedSample = lerp(min((float)sampleStart, (float)sampleEnd), max((float)sampleStart, (float)sampleEnd), ((float)k-i)/((float)(slideTimeSmp)));
+          if (pSet.interpolationType == 4) interpolatedSample = (k==i)?actualSample:0;
+          if (pSet.interpolationType == 5) interpolatedSample = 0;
+          if (pSet.sinusAddition!=0) interpolatedSample += sin((float)(k-i)/(float)slideTimeSmp*TWO_PI)*abs((float)sampleStart-(float)sampleEnd)*pSet.sinusAddition;
+          interpolatedSample = interpolatedSample*(1.0-pSet.iirFilter) + previousSampleTest*pSet.iirFilter;
+          previousSampleTest = interpolatedSample;
+          totalDifference += abs((float)(interpolatedSample-actualSample));
+        }
+        if (totalDifference > pSet.totalDifferenceThreshold && slideTimeSmp > 1) {
+          slideTimeSmp -= 1;
+          sampleEnd = waveInComp[i+slideTimeSmp];
+          break;
+        }
       }
     }
-    sampleStart = atanh(sampleStart)/pSet.compressionFactor;
+    if (pSet.optimizationMethod==2) {
+      for (int j = i+1; j < i+maxSlideTimeSmp; j++) {
+        slideTimeSmp = floor((float)j-i);
+        sampleEnd = waveInComp[j];
+        if (abs((float)sampleEnd-(float)sampleStart) > pSet.totalDifferenceThreshold && slideTimeSmp > 1) {
+          slideTimeSmp -= 1;
+          sampleEnd = waveInComp[i+slideTimeSmp];
+          break;
+        }
+      }
+    }
+    if (pSet.optimizationMethod==3) {
+      for (int j = i+1; j < i+maxSlideTimeSmp; j++) {
+        slideTimeSmp = floor((float)j-i);
+        sampleEnd = waveInComp[j];
+        if (((sampleStart>0)^(sampleEnd>0)) && slideTimeSmp > 1) {
+          slideTimeSmp -= 1;
+          sampleEnd = waveInComp[i+slideTimeSmp];
+          break;
+        }
+      }      
+    }
+    sampleStart = atanh(sampleStart)/pSet.compressionFactor;// TODO why not just reading waveIn there ?
     sampleEnd   = atanh(sampleEnd)/pSet.compressionFactor;
     for (int k = i; k < i+slideTimeSmp; k ++) {
       waveOut[k] = sampleStart;
       if (pSet.interpolationType == 1) waveOut[k] = lerp((float)sampleStart, (float)sampleEnd, ((float)k-i)/((float)(slideTimeSmp)));
-      if (pSet.interpolationType == 2) waveOut[k] = (k==i)?sampleStart:0;
-      if (pSet.interpolationType == 3) waveOut[k] = map((float)sCurve(map(((float)k-i)/(float)(slideTimeSmp), 0, 1, -1, 1)), -1, 1, (float)sampleStart, (float)sampleEnd);
-      if (pSet.interpolationType == 4) waveOut[k] = 0;
+      if (pSet.interpolationType == 2) waveOut[k] = map((float)sCurve(map(((float)k-i)/(float)(slideTimeSmp), 0, 1, -1, 1)), -1, 1, (float)sampleStart, (float)sampleEnd);
+      if (pSet.interpolationType == 3) waveOut[k] = lerp(min((float)sampleStart, (float)sampleEnd), max((float)sampleStart, (float)sampleEnd), ((float)k-i)/((float)(slideTimeSmp)));
+      if (pSet.interpolationType == 4) waveOut[k] = (k==i)?sampleStart:0;
+      if (pSet.interpolationType == 5) waveOut[k] = 0;
       if (pSet.sinusAddition!=0) waveOut[k] += sin((float)(k-i)/(float)slideTimeSmp*TWO_PI)*abs((float)sampleStart-(float)sampleEnd)*pSet.sinusAddition;
+      waveOut[k] = waveOut[k]*(1.0-pSet.iirFilter) + previousSample*pSet.iirFilter;
+      previousSample = waveOut[k];
       if (waveOut[k]>+1) waveOut[k]=+1;
       if (waveOut[k]<-1) waveOut[k]=-1;
     }
@@ -389,19 +417,37 @@ class SampleSlot {
         }
       }
     }
-    if (loudest!=0) previewGain = 1.0/loudest;
+    if (loudest!=0) previewGain = 0.9/loudest;
     previewOffset = loudestPosition-((float)displaySine.length*0.5f/nSample[0].length);
+    println(previewOffset);
+    try {
+      ((Slider)getUiElementCalled("previewOffset")).value = previewOffset;
+      ((Slider)getUiElementCalled("previewOffset")).updateOperation.execute();
+      ((Slider)getUiElementCalled("previewGain")).value = previewGain/30.0;
+      ((Slider)getUiElementCalled("previewGain")).updateOperation.execute();
+    }
+    catch(Exception e) {
+      println(e);
+    }
     updateDisplay();
-    // TODO update sliders
   }
+}
+
+UIElement getUiElementCalled(String name) {
+  for (UIElement e : uiElements) {
+    if (e.name.equals(name)) return e;
+  }
+  return null;
 }
 
 class ParameterSet {
   float totalDifferenceThreshold;
   float compressionFactor;
   float defaultMaxSlideTimeSmp;
-  int interpolationType;// 0 = rectangular, 1 = linear, 2 = boxcar, 3 = sCurve; 4 = zero
+  int interpolationType;// 0 = rectangular, 1 = linear, 2 = sCurve, 3 = sawtooth, 4 = boxcar; 5 = zero
   float sinusAddition;
+  float iirFilter;
+  int optimizationMethod;// 0 = fixed, 1 = integral, 2 = difference, 3 = zero-crossing
   ParameterSet copy() {
     ParameterSet copy = new ParameterSet();
     copy.totalDifferenceThreshold = this.totalDifferenceThreshold;
@@ -409,6 +455,8 @@ class ParameterSet {
     copy.defaultMaxSlideTimeSmp = this.defaultMaxSlideTimeSmp;
     copy.interpolationType = this.interpolationType;
     copy.sinusAddition = this.sinusAddition;
+    copy.iirFilter = this.iirFilter;
+    copy.optimizationMethod = this.optimizationMethod;
     return copy;
   }
 }

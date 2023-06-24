@@ -3,7 +3,7 @@ ArrayList<UIElement> uiElements = new ArrayList<UIElement>();
 
 void setBasicUIElements() {
   // previewOffset
-  Slider sliderPreviewOffset = new Slider("previewOffset", 410, 330, 300, 20, 0.5, false, 0);
+  Slider sliderPreviewOffset = new Slider("previewOffset", 410, 330, 380, 20, 0.5, false, 0);
   UpdateOperation sliderPreviewOffsetOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -28,21 +28,8 @@ void setBasicUIElements() {
   sliderPreviewGain.setUpdateOperation(sliderPreviewGainOperation);
   uiElements.add(sliderPreviewGain);
 
-  // compressionFactor
-  Slider sliderCompressionFactor = new Slider("compressionFactor", 450, 370, 200, 20, 0.5, false, 0);
-  UpdateOperation sliderCompressionFactorOperation = new UpdateOperation() {
-    @Override
-      public void execute() {
-      sliderCompressionFactor.scaledValue = sliderCompressionFactor.value;
-      previewSet.compressionFactor = map(pow(sliderCompressionFactor.scaledValue, 1.5), 0, 1, 0.1, 5);
-      updateDisplay();
-    }
-  };
-  sliderCompressionFactor.setUpdateOperation(sliderCompressionFactorOperation);
-  uiElements.add(sliderCompressionFactor);
-
   // defaultMaxSlideTimeSmp
-  Slider sliderDefaultMaxSlideTimeSmp = new Slider("defaultMaxSlideTimeSmp", 450, 400, 200, 20, 0.5, false, 0);
+  Slider sliderDefaultMaxSlideTimeSmp = new Slider("defaultMaxSlideTimeSmp", 410, 370, 200, 20, 0.5, false, 0);
   UpdateOperation sliderDefaultMaxSlideTimeSmpOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -54,8 +41,21 @@ void setBasicUIElements() {
   sliderDefaultMaxSlideTimeSmp.setUpdateOperation(sliderDefaultMaxSlideTimeSmpOperation);
   uiElements.add(sliderDefaultMaxSlideTimeSmp);
 
+  // optimizationMethod method
+  Slider sliderOptimizationMethod = new Slider("optimizationMethod", 410, 410, 200, 20, 0, false, 4);
+  UpdateOperation sliderOptimizationMethodOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      sliderOptimizationMethod.scaledValue = floor(sliderOptimizationMethod.value*(sliderOptimizationMethod.tickMarks-1));
+      previewSet.optimizationMethod = floor(sliderOptimizationMethod.scaledValue);
+      updateDisplay();
+    }
+  };
+  sliderOptimizationMethod.setUpdateOperation(sliderOptimizationMethodOperation);
+  uiElements.add(sliderOptimizationMethod);
+
   // totalDifferenceThreshold
-  Slider sliderTotalDifferenceThreshold = new Slider("totalDifferenceThreshold", 450, 430, 200, 20, 0.5, false, 0);
+  Slider sliderTotalDifferenceThreshold = new Slider("totalDifferenceThreshold", 410, 440, 200, 20, 0.5, false, 0);
   UpdateOperation sliderTotalDifferenceThresholdOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -67,8 +67,21 @@ void setBasicUIElements() {
   sliderTotalDifferenceThreshold.setUpdateOperation(sliderTotalDifferenceThresholdOperation);
   uiElements.add(sliderTotalDifferenceThreshold);
 
+  // compressionFactor
+  Slider sliderCompressionFactor = new Slider("compressionFactor", 410, 470, 200, 20, 0.5, false, 0);
+  UpdateOperation sliderCompressionFactorOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      sliderCompressionFactor.scaledValue = sliderCompressionFactor.value;
+      previewSet.compressionFactor = map(pow(sliderCompressionFactor.scaledValue, 1.5), 0, 1, 0.1, 5);
+      updateDisplay();
+    }
+  };
+  sliderCompressionFactor.setUpdateOperation(sliderCompressionFactorOperation);
+  uiElements.add(sliderCompressionFactor);
+
   // interpolationType
-  Slider sliderInterpolationType = new Slider("interpolationType", 450, 460, 200, 20, 0, false, 5);
+  Slider sliderInterpolationType = new Slider("interpolationType", 410, 510, 200, 20, 0, false, 6);
   UpdateOperation sliderInterpolationTypeOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -81,7 +94,7 @@ void setBasicUIElements() {
   uiElements.add(sliderInterpolationType);
 
   // sinusAddition
-  Slider sliderSinusAddition = new Slider("sinusAddition", 450, 490, 200, 20, 0.5, false, 0);
+  Slider sliderSinusAddition = new Slider("sinusAddition", 410, 540, 200, 20, 0.5, false, 0);
   UpdateOperation sliderSinusAdditionOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -95,7 +108,20 @@ void setBasicUIElements() {
   sliderSinusAddition.setUpdateOperation(sliderSinusAdditionOperation);
   uiElements.add(sliderSinusAddition);
 
-  Button processExportRemoveButton = new Button("processExportRemove", 600, 520, 100, 30);
+  // IIR filter
+  Slider sliderIIRFilter = new Slider("iirFilter", 410, 570, 200, 20, 0.0, false, 0);
+  UpdateOperation sliderIIRFilterOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      sliderIIRFilter.scaledValue = sliderIIRFilter.value;
+      previewSet.iirFilter = sliderIIRFilter.scaledValue;
+      updateDisplay();
+    }
+  };
+  sliderIIRFilter.setUpdateOperation(sliderIIRFilterOperation);
+  uiElements.add(sliderIIRFilter);
+
+  Button processExportRemoveButton = new Button("processExportRemove", 600, 610, 150, 20);
   processExportRemoveButton.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -104,7 +130,7 @@ void setBasicUIElements() {
   };
   uiElements.add(processExportRemoveButton);
 
-  Button playCurrentSlot = new Button("playCurrentSlot", 450, 520, 100, 30);
+  Button playCurrentSlot = new Button("playCurrentSlot", 410, 610, 150, 20);
   playCurrentSlot.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -198,15 +224,18 @@ class Slider extends UIElement {
   void draw() {
     pushMatrix();
     translate(x, y);
-    stroke(0x80);
+    //stroke(0x80);
+    noStroke();
     fill(0xE0);
-    if (isInside(mouseX, mouseY) || isDragged) fill(0xFF);
+    if (isInside(mouseX, mouseY)) fill(0xFF);
+    if (isDragged) fill(0xFF, 0xFF, 0);
     rect(0, 0, w, h);
     stroke(0, 0, 0xFF);
     if (vertical) line(0, h-value*h, w, h-value*h);
     else line(value*w, 0, value*w, h);
     fill(0x50);
-    text(name+" "+round(scaledValue*100.0f)/100.0f, 3, h-3);
+    if (vertical) text(name+" "+round(scaledValue*100.0f)/100.0f, 0, h+14);
+    else text(name+" "+round(scaledValue*100.0f)/100.0f, 3, h-3);
     popMatrix();
   }
 
