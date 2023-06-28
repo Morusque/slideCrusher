@@ -230,8 +230,8 @@ class Button extends UIElement {
     noFill();
     stroke(0xDF);
     if (isDragged) stroke(0x00);
-    line(0, 0, w, 0);
-    line(0, 0, 0, h);
+    line(0, 0, w-1, 0);
+    line(0, 0, 0, h-1);
     stroke(0x00);
     if (isDragged) stroke(0xDF);
     line(0, h-1, w-1, h-1);

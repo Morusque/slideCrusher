@@ -14,6 +14,8 @@ import ddf.minim.*;
 // uielements for int choices
 // actual UI values, display max sample time as Hz
 // handle very long file names
+// add optim mode : max non cumulative difference
+// preview left or right
 
 // parameters
 ParameterSet previewSet = new ParameterSet();
@@ -26,6 +28,7 @@ String sourceUrl = "";
 // display
 double[] displaySine = new double[400-20];
 double[] displayInterp = new double[400-20];
+boolean[] displayLandmarks = new boolean[400-20];
 
 ArrayList<SampleSlot> sampleSlots = new ArrayList<SampleSlot>();
 SampleSlot selectedSlot;
@@ -61,7 +64,9 @@ void updateDisplay() {
       for (int i=0; i < displaySine.length; i++) displaySine[i] = selectedSlot.nSample[0][floor(constrain(((float)selectedSlot.nSample[0].length-displaySine.length)*previewOffset, 0, selectedSlot.nSample[0].length-displaySine.length)+i)];
     }
   }
-  displayInterp = computeInterp(displaySine, null, previewSet);
+  ProcessResult computation = computeInterp(displaySine, null, previewSet);
+  displayInterp = computation.nSampleProcessed;
+  displayLandmarks = computation.landmarks;
 }
 
 void processCurrentSlot() {
@@ -86,7 +91,7 @@ class ProcessRunner extends Thread {
     for (int c = 0; c < slot.nbChannels; c++) {
       slot.updateProgressCurrentChannel(c);
       slot.updateProgressSample(0);
-      slot.nSampleProcessed[c] = computeInterp(slot.nSample[c], slot, slot.parameterSet);
+      slot.nSampleProcessed[c] = computeInterp(slot.nSample[c], slot, slot.parameterSet).nSampleProcessed;
     }
 
     try {
@@ -149,14 +154,24 @@ void draw() {
   line(1, height-2, width-2, height-2);
   line(width-2, 1, width-2, height-2);
   fill(0x20);
+  
+  if (sampleSlots.size()==0) {
+    fill(0);
+    text("drag and drop samples here",20,30);
+  }
 
-  // simulated waveform
   noFill();
   pushMatrix();
   translate(400+10, 10);
   noStroke();
   fill(0xFF);
   rect(0, 0, displaySine.length, 300);
+
+  stroke(0xF0);
+  for (int i=0; i<displaySine.length; i++) {
+    if (displayLandmarks[i]) line(i, 0, i, 300);
+  }
+
   pushMatrix();
   translate(0, 150);
   float displayMax = 147;
@@ -211,8 +226,10 @@ void mouseReleased() {
   for (UIElement e : uiElements) e.mouseReleased(mouseX, mouseY);
 }
 
-double[] computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet) {
+ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet) {
+  ProcessResult result = new ProcessResult();
   double[] waveInComp = new double[waveIn.length];
+  boolean[] landmarks = new boolean[waveIn.length];
   for (int i = 0; i < waveIn.length; i++) waveInComp[i] = Math.tanh(waveIn[i]*pSet.compressionFactor);
   double[] waveOut = new double[waveIn.length];
   double previousSample = 0;
@@ -290,6 +307,7 @@ double[] computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet) {
       sampleMax = max((float)sampleMax, (float)waveIn[k]);
     }
     for (int k = i; k < i+slideTimeSmp; k ++) {
+      landmarks[k] = (k==i);
       waveOut[k] = sampleStart;
       if (pSet.interpolationType == 1) waveOut[k] = lerp((float)sampleStart, (float)sampleEnd, ((float)k-i)/((float)(slideTimeSmp)));
       if (pSet.interpolationType == 2) waveOut[k] = map((float)sCurve(map(((float)k-i)/(float)(slideTimeSmp), 0, 1, -1, 1)), -1, 1, (float)sampleStart, (float)sampleEnd);
@@ -304,7 +322,9 @@ double[] computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet) {
     }
     i+=slideTimeSmp;
   }
-  return waveOut;
+  result.nSampleProcessed = waveOut;
+  result.landmarks = landmarks;
+  return result;
 }
 
 double atanh(double x) {
@@ -323,6 +343,11 @@ public static double cubicInterpolation(double v0, double v1, double v2, double 
   double c = -0.5 * v0 + 0.5 * v2;
   double d = v1;
   return a*x*x*x + b*x*x + c*x + d;
+}
+
+class ProcessResult {
+  double[] nSampleProcessed;
+  boolean[] landmarks;
 }
 
 class SampleSlot {
@@ -417,17 +442,34 @@ class SampleSlot {
   void draw() {
     pushMatrix();
     translate(x, y);
-    noFill();
-    if (this==selectedSlot) fill(0xFF);
-    stroke(0);
+    noStroke();
     strokeWeight(1);
+    fill(0xC0);
+    if (this==selectedSlot) fill(0xD0);
     rect(0, 0, w, h);
     noStroke();
     if (isProcessing) {
       fill(0xFF, 0xFF, 0);
       rect(1, 1, progress*(w-1), (h-1));
     }
-    fill(0);
+    noFill();
+    stroke(0xDF);
+    if (this==selectedSlot) stroke(0x00);
+    line(0, 0, w-1, 0);
+    line(0, 0, 0, h-1);
+    stroke(0x00);
+    if (this==selectedSlot) stroke(0xDF);
+    line(0, h-1, w-1, h-1);
+    line(w-1, 0, w-1, h-1);
+    stroke(0xFF);
+    if (this==selectedSlot) stroke(0x80);
+    line(1, 1, w-2, 1);
+    line(1, 1, 1, h-2);
+    stroke(0x80);
+    if (this==selectedSlot) stroke(0xFF);
+    line(1, h-2, w-2, h-2);
+    line(w-2, 1, w-2, h-2);
+    fill(0x20);
     text(url, 10, 10, w-20, h-20);
     popMatrix();
   }
@@ -471,7 +513,10 @@ class SampleSlot {
     updateDisplay();
   }
   void mousePressed(float mX, float mY) {
-    if (mX>x&&mY>y&&mX<x+w&&mY<y+h) selectedSlot = this;
+    if (mX>x&&mY>y&&mX<x+w&&mY<y+h) {
+      selectedSlot = this;
+      updateDisplay();
+    }
   }
 }
 
