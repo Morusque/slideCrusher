@@ -1,9 +1,15 @@
 
 ArrayList<UIElement> uiElements = new ArrayList<UIElement>();
 
+Tooltip tooltip;
+
 void setBasicUIElements() {
+
+  tooltip = new Tooltip("tooltip", 10, 600, 300, 80);
+  uiElements.add(tooltip);
+
   // previewOffset
-  Slider sliderPreviewOffset = new Slider("previewOffset", 410, 330, 380, 20, 0.5, false, 0);
+  Slider sliderPreviewOffset = new Slider("previewOffset", 410, 311, 380, 20, 0.5, false, 0);
   UpdateOperation sliderPreviewOffsetOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -13,10 +19,12 @@ void setBasicUIElements() {
     }
   };
   sliderPreviewOffset.setUpdateOperation(sliderPreviewOffsetOperation);
+  sliderPreviewOffset.setTooltip(tooltip, "preview offset");
+  sliderPreviewOffset.showLabel = false;
   uiElements.add(sliderPreviewOffset);
 
   // previewGain
-  Slider sliderPreviewGain = new Slider("previewGain", 360, 10, 20, 300, 0.03, true, 0);
+  Slider sliderPreviewGain = new Slider("previewGain", 390, 10, 20, 300, 0.03, true, 0);
   UpdateOperation sliderPreviewGainOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -26,6 +34,8 @@ void setBasicUIElements() {
     }
   };
   sliderPreviewGain.setUpdateOperation(sliderPreviewGainOperation);
+  sliderPreviewGain.setTooltip(tooltip, "preview gain");
+  sliderPreviewGain.showLabel = false;
   uiElements.add(sliderPreviewGain);
 
   // defaultMaxSlideTimeSmp
@@ -39,6 +49,7 @@ void setBasicUIElements() {
     }
   };
   sliderDefaultMaxSlideTimeSmp.setUpdateOperation(sliderDefaultMaxSlideTimeSmpOperation);
+  sliderDefaultMaxSlideTimeSmp.setTooltip(tooltip, "default sampling frequency \r\nsimilar to frequancy in a classic bitcrusher");
   uiElements.add(sliderDefaultMaxSlideTimeSmp);
 
   // optimizationMethod method
@@ -48,10 +59,15 @@ void setBasicUIElements() {
       public void execute() {
       sliderOptimizationMethod.scaledValue = floor(sliderOptimizationMethod.value*(sliderOptimizationMethod.tickMarks-1));
       previewSet.optimizationMethod = floor(sliderOptimizationMethod.scaledValue);
+      if (previewSet.optimizationMethod == 0) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nno optimization";
+      if (previewSet.optimizationMethod == 1) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd sampling points to make sure the blue zone doesn't exeed the threshold";
+      if (previewSet.optimizationMethod == 2) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd sampling points to make sure the difference between consecutive points doesn't exeed the threshold";
+      if (previewSet.optimizationMethod == 3) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd sampling points when crossing zero";
       updateDisplay();
     }
   };
   sliderOptimizationMethod.setUpdateOperation(sliderOptimizationMethodOperation);
+  sliderOptimizationMethod.setTooltip(tooltip, "how to optimize the sampling time");
   uiElements.add(sliderOptimizationMethod);
 
   // totalDifferenceThreshold
@@ -65,6 +81,7 @@ void setBasicUIElements() {
     }
   };
   sliderTotalDifferenceThreshold.setUpdateOperation(sliderTotalDifferenceThresholdOperation);
+  sliderTotalDifferenceThreshold.setTooltip(tooltip, "threshold used by the optimization process");
   uiElements.add(sliderTotalDifferenceThreshold);
 
   // compressionFactor
@@ -78,6 +95,7 @@ void setBasicUIElements() {
     }
   };
   sliderCompressionFactor.setUpdateOperation(sliderCompressionFactorOperation);
+  sliderCompressionFactor.setTooltip(tooltip, "temporarily compress the sample during optimization \r\nlower values generate more distortion and gating \r\nhigher values keep precision on quiter parts of the audio");
   uiElements.add(sliderCompressionFactor);
 
   // interpolationType
@@ -87,10 +105,17 @@ void setBasicUIElements() {
       public void execute() {
       sliderInterpolationType.scaledValue = floor(sliderInterpolationType.value*(sliderInterpolationType.tickMarks-1));
       previewSet.interpolationType = floor(sliderInterpolationType.scaledValue);
+      if (previewSet.interpolationType == 0) sliderInterpolationType.description = "interpolation type : \r\nsample and hold";
+      if (previewSet.interpolationType == 1) sliderInterpolationType.description = "interpolation type : \r\nlinear";
+      if (previewSet.interpolationType == 2) sliderInterpolationType.description = "interpolation type : \r\ns curve";
+      if (previewSet.interpolationType == 3) sliderInterpolationType.description = "interpolation type : \r\nsawtooth";
+      if (previewSet.interpolationType == 4) sliderInterpolationType.description = "interpolation type : \r\nboxcar";
+      if (previewSet.interpolationType == 5) sliderInterpolationType.description = "interpolation type : \r\nzero";
       updateDisplay();
     }
   };
   sliderInterpolationType.setUpdateOperation(sliderInterpolationTypeOperation);
+  sliderInterpolationType.setTooltip(tooltip, "interpolation type");
   uiElements.add(sliderInterpolationType);
 
   // sinusAddition
@@ -106,6 +131,7 @@ void setBasicUIElements() {
     }
   };
   sliderSinusAddition.setUpdateOperation(sliderSinusAdditionOperation);
+  sliderSinusAddition.setTooltip(tooltip, "adds one arbitrary sinewave between each sampling points, amplitude of the sines follows sound amplitude");
   uiElements.add(sliderSinusAddition);
 
   // IIR filter
@@ -119,6 +145,7 @@ void setBasicUIElements() {
     }
   };
   sliderIIRFilter.setUpdateOperation(sliderIIRFilterOperation);
+  sliderIIRFilter.setTooltip(tooltip, "applies an IIR filter in the process");
   uiElements.add(sliderIIRFilter);
 
   Button processExportRemoveButton = new Button("processExportRemove", 600, 610, 150, 20);
@@ -128,6 +155,7 @@ void setBasicUIElements() {
       processCurrentSlot();
     }
   };
+  processExportRemoveButton.setTooltip(tooltip, "process selected sample");
   uiElements.add(processExportRemoveButton);
 
   Button playCurrentSlot = new Button("playCurrentSlot", 410, 610, 150, 20);
@@ -145,6 +173,7 @@ void setBasicUIElements() {
       }
     }
   };
+  playCurrentSlot.setTooltip(tooltip, "play selected sample (original or processed if applicable)");
   uiElements.add(playCurrentSlot);
 
   for (UIElement e : uiElements) if (e.updateOperation!=null) e.updateOperation.execute();
@@ -154,6 +183,9 @@ abstract class UIElement {
   float x, y, w, h;
   String name;
   UpdateOperation updateOperation;
+  String description = "";
+  boolean isDragged;
+  boolean showLabel = true;
 
   UIElement(String name, float x, float y, float w, float h) {
     this.name = name;
@@ -175,6 +207,10 @@ abstract class UIElement {
   }
   void mouseReleased() {
   }
+  void setTooltip(Tooltip tooltip, String description) {
+    tooltip.tippedElements.add(this);
+    this.description = description;
+  }
 }
 
 class Button extends UIElement {
@@ -192,7 +228,7 @@ class Button extends UIElement {
     if (isInside(mouseX, mouseY) && mousePressed) fill(0xFF, 0xFF, 0);
     rect(0, 0, w, h);
     fill(0x50);
-    text(name, 3, h-3);
+    if (showLabel) text(name, 3, h-3);
     popMatrix();
   }
 
@@ -212,7 +248,6 @@ class Slider extends UIElement {
   float scaledValue;
   boolean vertical;
   int tickMarks;
-  boolean isDragged;
 
   Slider(String name, int x, int y, int w, int h, float value, boolean vertical, int tickMarks) {
     super(name, x, y, w, h);
@@ -234,8 +269,10 @@ class Slider extends UIElement {
     if (vertical) line(0, h-value*h, w, h-value*h);
     else line(value*w, 0, value*w, h);
     fill(0x50);
-    if (vertical) text(name+" "+round(scaledValue*100.0f)/100.0f, 0, h+14);
-    else text(name+" "+round(scaledValue*100.0f)/100.0f, 3, h-3);
+    if (showLabel) {
+      if (vertical) text(name+" "+round(scaledValue*100.0f)/100.0f, 0, h+14);
+      else text(name+" "+round(scaledValue*100.0f)/100.0f, 3, h-3);
+    }
     popMatrix();
   }
 
@@ -269,6 +306,32 @@ class Slider extends UIElement {
 
 public interface UpdateOperation {
   void execute();
+}
+
+class Tooltip extends UIElement {
+
+  UIElement showing;
+  ArrayList<UIElement> tippedElements = new ArrayList<UIElement>();
+
+  Tooltip(String name, float x, float y, float width, float height) {
+    super(name, x, y, width, height);
+  }
+  void draw() {
+    for (UIElement e : tippedElements) {
+      if (e==showing) {
+        if (!e.isInside(mouseX, mouseY)&&!e.isDragged) showing=null;
+      } else {
+        if (e.isInside(mouseX, mouseY)) showing=e;
+      }
+    }
+    if (showing!=null) {
+      stroke(0);
+      fill(0xFF);
+      rect(x, y, w, h);
+      fill(0);
+      text(showing.description, x+3, y+3, w-20, h-3);
+    }
+  }
 }
 
 class Container extends UIElement {
