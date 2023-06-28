@@ -46,7 +46,7 @@ void setup() {
 
 void dropEvent(DropEvent theDropEvent) {
   if (theDropEvent.isFile()) {
-    selectedSlot = new SampleSlot(10,10+sampleSlots.size()*80);
+    selectedSlot = new SampleSlot(10, 10+sampleSlots.size()*80);
     selectedSlot.url = theDropEvent.toString();
     selectedSlot.loadFile();
     selectedSlot.normalizeDisplay();
@@ -135,6 +135,21 @@ class ProcessRunner extends Thread {
 
 void draw() {
   background(0xC0);
+  noFill();
+  stroke(0xDF);
+  line(0, 0, width, 0);
+  line(0, 0, 0, height);
+  stroke(0x00);
+  line(0, height-1, width-1, height-1);
+  line(width-1, 0, width-1, height-1);
+  stroke(0xFF);
+  line(1, 1, width-2, 1);
+  line(1, 1, 1, height-2);
+  stroke(0x80);
+  line(1, height-2, width-2, height-2);
+  line(width-2, 1, width-2, height-2);
+  fill(0x20);
+
   // simulated waveform
   noFill();
   pushMatrix();
@@ -146,9 +161,11 @@ void draw() {
   translate(0, 150);
   float displayMax = 147;
   // difference
-  for (int i=0; i<displaySine.length; i++) {
-    stroke(0xCC, 0xCC, 0xFF);
-    line(i, -constrain((float)displaySine[i]*previewGain, -1, 1)*displayMax, i, -constrain((float)displayInterp[i]*previewGain, -1, 1)*displayMax);
+  if (previewSet.optimizationMethod==1) {
+    for (int i=0; i<displaySine.length; i++) {
+      stroke(0xCC, 0xCC, 0xFF);
+      line(i, -constrain((float)displaySine[i]*previewGain, -1, 1)*displayMax, i, -constrain((float)displayInterp[i]*previewGain, -1, 1)*displayMax);
+    }
   }
   // original
   stroke(0, 0x50, 0);
@@ -324,7 +341,7 @@ class SampleSlot {
   int progressCurrentChannel = 0;
   float progressSample = 0;
   ParameterSet parameterSet;
-  float x,y;
+  float x, y;
   float w = 350;
   float h = 70;
   SampleSlot(float x, float y) {
@@ -399,7 +416,7 @@ class SampleSlot {
   }
   void draw() {
     pushMatrix();
-    translate(x,y);
+    translate(x, y);
     noFill();
     if (this==selectedSlot) fill(0xFF);
     stroke(0);

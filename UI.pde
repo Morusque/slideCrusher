@@ -284,10 +284,21 @@ class Slider extends UIElement {
     pushMatrix();
     translate(x, y);
     noStroke();
-    fill(0xE0);
-    if (isInside(mouseX, mouseY)) fill(0xFF);
-    if (isDragged) fill(0xFF, 0xFF, 0);
+    fill(0xC0);
+    if (isInside(mouseX, mouseY)) fill(0xD0);
     rect(0, 0, w, h);
+    if (isDragged) {
+      noFill();
+      stroke(0);
+      for (int x=0; x<w; x+=2) {
+        point(x, 0);
+        point(x, h-1);
+      }
+      for (int y=0; y<h; y+=2) {
+        point(0, y);
+        point(w-1, y);
+      }
+    }
 
     noFill();
     for (int i=0; i<4; i++) {
@@ -305,7 +316,7 @@ class Slider extends UIElement {
     fill(0x50);
     if (showLabel) {
       if (vertical) text(name+" "+round(scaledValue*100.0f)/100.0f, 0, h+14);
-      else text(name+" "+round(scaledValue*100.0f)/100.0f, 3, h-3);
+      else text(name+" "+round(scaledValue*100.0f)/100.0f, w+5, h-5);
     }
 
     popMatrix();
@@ -359,22 +370,20 @@ class Tooltip extends UIElement {
         if (e.isInside(mouseX, mouseY)) showing=e;
       }
     }
-    if (showing!=null) {
-      pushMatrix();
-      translate(x, y);
-      noStroke();
-      fill(0xE0);
-      rect(0, 0, w, h);
-      stroke(0x80);
-      line(0, 0, w, 0);
-      line(0, 0, 0, h);
-      stroke(0xFF);
-      line(0, h-1, w-1, h-1);
-      line(w-1, 0, w-1, h-1);
-      fill(0);
-      text(showing.description, 5, 5, w-25, h-10);
-      popMatrix();
-    }
+    pushMatrix();
+    translate(x, y);
+    noStroke();
+    fill(0xE0);
+    rect(0, 0, w, h);
+    stroke(0x80);
+    line(0, 0, w, 0);
+    line(0, 0, 0, h);
+    stroke(0xFF);
+    line(0, h-1, w-1, h-1);
+    line(w-1, 0, w-1, h-1);
+    fill(0);
+    if (showing!=null) text(showing.description, 5, 5, w-25, h-10);
+    popMatrix();
   }
 }
 
