@@ -60,8 +60,8 @@ void setBasicUIElements() {
       sliderOptimizationMethod.scaledValue = floor(sliderOptimizationMethod.value*(sliderOptimizationMethod.tickMarks-1));
       previewSet.optimizationMethod = floor(sliderOptimizationMethod.scaledValue);
       if (previewSet.optimizationMethod == 0) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nno optimization";
-      if (previewSet.optimizationMethod == 1) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd sampling points to make sure the blue zone doesn't exeed the threshold";
-      if (previewSet.optimizationMethod == 2) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd sampling points to make sure the difference between consecutive points doesn't exeed the threshold";
+      if (previewSet.optimizationMethod == 1) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd more sampling points to make sure the difference integral (blue zone) doesn't exeed the threshold";
+      if (previewSet.optimizationMethod == 2) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd more sampling points to make sure the difference between consecutive sampled points doesn't exeed the threshold";
       if (previewSet.optimizationMethod == 3) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd sampling points when crossing zero";
       updateDisplay();
     }
@@ -205,7 +205,7 @@ abstract class UIElement {
   }
   void mouseDragged(float x, float y) {
   }
-  void mouseReleased() {
+  void mouseReleased(float x, float y) {
   }
   void setTooltip(Tooltip tooltip, String description) {
     tooltip.tippedElements.add(this);
@@ -222,20 +222,44 @@ class Button extends UIElement {
   void draw() {
     pushMatrix();
     translate(x, y);
-    stroke(0x80);
-    fill(0xE0);
-    if (isInside(mouseX, mouseY)) fill(0xFF);
-    if (isInside(mouseX, mouseY) && mousePressed) fill(0xFF, 0xFF, 0);
+    strokeWeight(1);
+    noStroke();
+    fill(0xC0);
+    if (isInside(mouseX, mouseY)) fill(0xE0);
     rect(0, 0, w, h);
-    fill(0x50);
-    if (showLabel) text(name, 3, h-3);
+    noFill();
+    stroke(0xDF);
+    if (isDragged) stroke(0x00);
+    line(0, 0, w, 0);
+    line(0, 0, 0, h);
+    stroke(0x00);
+    if (isDragged) stroke(0xDF);
+    line(0, h-1, w-1, h-1);
+    line(w-1, 0, w-1, h-1);
+    stroke(0xFF);
+    if (isDragged) stroke(0x80);
+    line(1, 1, w-2, 1);
+    line(1, 1, 1, h-2);
+    stroke(0x80);
+    if (isDragged) stroke(0xFF);
+    line(1, h-2, w-2, h-2);
+    line(w-2, 1, w-2, h-2);
+    fill(0x20);
+    if (showLabel) text(name, 6, h-6);
     popMatrix();
   }
 
   void mousePressed(float mX, float mY) {
+    if (isInside(mX, mY)) {
+      isDragged = true;
+    }
+  }
+
+  void mouseReleased(float mX, float mY) {
     if (isInside(mX, mY) && updateOperation != null) {
       updateOperation.execute();
     }
+    if (isDragged) isDragged = false;
   }
 
   void setUpdateOperation(UpdateOperation updateOperation) {
@@ -259,12 +283,22 @@ class Slider extends UIElement {
   void draw() {
     pushMatrix();
     translate(x, y);
-    //stroke(0x80);
     noStroke();
     fill(0xE0);
     if (isInside(mouseX, mouseY)) fill(0xFF);
     if (isDragged) fill(0xFF, 0xFF, 0);
     rect(0, 0, w, h);
+
+    noFill();
+    for (int i=0; i<4; i++) {
+      if (i==0) stroke(0x80);
+      if (i==1) stroke(0x00);
+      if (i==2) stroke(0xDF);
+      if (i==3) stroke(0xFF);
+      if (vertical) line(floor(w/2-2)+i, 0, floor(w/2-2)+i, h);
+      else line(0, floor(h/2-2)+i, w, floor(h/2-2)+i);
+    }
+
     stroke(0, 0, 0xFF);
     if (vertical) line(0, h-value*h, w, h-value*h);
     else line(value*w, 0, value*w, h);
@@ -273,6 +307,7 @@ class Slider extends UIElement {
       if (vertical) text(name+" "+round(scaledValue*100.0f)/100.0f, 0, h+14);
       else text(name+" "+round(scaledValue*100.0f)/100.0f, 3, h-3);
     }
+
     popMatrix();
   }
 
@@ -299,7 +334,7 @@ class Slider extends UIElement {
     this.updateOperation = updateOperation;
   }
 
-  void mouseReleased() {
+  void mouseReleased(float x, float y) {
     isDragged = false;
   }
 }
@@ -325,11 +360,20 @@ class Tooltip extends UIElement {
       }
     }
     if (showing!=null) {
-      stroke(0);
-      fill(0xFF);
-      rect(x, y, w, h);
+      pushMatrix();
+      translate(x, y);
+      noStroke();
+      fill(0xE0);
+      rect(0, 0, w, h);
+      stroke(0x80);
+      line(0, 0, w, 0);
+      line(0, 0, 0, h);
+      stroke(0xFF);
+      line(0, h-1, w-1, h-1);
+      line(w-1, 0, w-1, h-1);
       fill(0);
-      text(showing.description, x+3, y+3, w-20, h-3);
+      text(showing.description, 5, 5, w-25, h-10);
+      popMatrix();
     }
   }
 }

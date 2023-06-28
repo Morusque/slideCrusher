@@ -13,6 +13,7 @@ import ddf.minim.*;
 // exported as filename_processed or dialog
 // uielements for int choices
 // actual UI values, display max sample time as Hz
+// handle very long file names
 
 // parameters
 ParameterSet previewSet = new ParameterSet();
@@ -45,7 +46,7 @@ void setup() {
 
 void dropEvent(DropEvent theDropEvent) {
   if (theDropEvent.isFile()) {
-    selectedSlot = new SampleSlot();
+    selectedSlot = new SampleSlot(10,10+sampleSlots.size()*80);
     selectedSlot.url = theDropEvent.toString();
     selectedSlot.loadFile();
     selectedSlot.normalizeDisplay();
@@ -133,7 +134,7 @@ class ProcessRunner extends Thread {
 }
 
 void draw() {
-  background(0xF0);
+  background(0xC0);
   // simulated waveform
   noFill();
   pushMatrix();
@@ -175,19 +176,14 @@ void draw() {
 
   popMatrix();
 
-  for (int i = 0; i < sampleSlots.size(); i++) {
-    pushMatrix();
-    translate(30, 30+i*80);
-    sampleSlots.get(i).draw();
-    popMatrix();
-  }
-
+  for (int i = 0; i < sampleSlots.size(); i++) sampleSlots.get(i).draw();
   for (UIElement e : uiElements) e.draw();
 }
 
 
 void mousePressed() {
   for (UIElement e : uiElements) e.mousePressed(mouseX, mouseY);
+  for (SampleSlot s : sampleSlots) s.mousePressed(mouseX, mouseY);
 }
 
 void mouseDragged() {
@@ -195,7 +191,7 @@ void mouseDragged() {
 }
 
 void mouseReleased() {
-  for (UIElement e : uiElements) e.mouseReleased();
+  for (UIElement e : uiElements) e.mouseReleased(mouseX, mouseY);
 }
 
 double[] computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet) {
@@ -328,7 +324,12 @@ class SampleSlot {
   int progressCurrentChannel = 0;
   float progressSample = 0;
   ParameterSet parameterSet;
-  SampleSlot() {
+  float x,y;
+  float w = 350;
+  float h = 70;
+  SampleSlot(float x, float y) {
+    this.x=x;
+    this.y=y;
   }
   void loadFile() {
     try {
@@ -397,18 +398,21 @@ class SampleSlot {
     progress = ((float)progressCurrentChannel/nbChannels)+(progressSample/nbChannels);
   }
   void draw() {
+    pushMatrix();
+    translate(x,y);
     noFill();
     if (this==selectedSlot) fill(0xFF);
     stroke(0);
     strokeWeight(1);
-    rect(0, 0, 300, 70);
+    rect(0, 0, w, h);
     noStroke();
     if (isProcessing) {
       fill(0xFF, 0xFF, 0);
-      rect(1, 1, progress*(300-1), (70-1));
+      rect(1, 1, progress*(w-1), (h-1));
     }
     fill(0);
-    text(url, 10, 10, 300-20, 70-20);
+    text(url, 10, 10, w-20, h-20);
+    popMatrix();
   }
   void process() {
     parameterSet = previewSet.copy();
@@ -438,7 +442,6 @@ class SampleSlot {
     }
     if (loudest!=0) previewGain = 0.9/loudest;
     previewOffset = loudestPosition-((float)displaySine.length*0.5f/nSample[0].length);
-    println(previewOffset);
     try {
       ((Slider)getUiElementCalled("previewOffset")).value = previewOffset;
       ((Slider)getUiElementCalled("previewOffset")).updateOperation.execute();
@@ -449,6 +452,9 @@ class SampleSlot {
       println(e);
     }
     updateDisplay();
+  }
+  void mousePressed(float mX, float mY) {
+    if (mX>x&&mY>y&&mX<x+w&&mY<y+h) selectedSlot = this;
   }
 }
 
