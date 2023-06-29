@@ -453,33 +453,13 @@ class SampleSlot {
   void draw() {
     pushMatrix();
     translate(x, y);
-    noStroke();
-    strokeWeight(1);
-    fill(0xC0);
-    if (this==selectedSlot) fill(0xD0);
-    rect(0, 0, w, h);
+    UIRectangle(0,0,w,h,this==selectedSlot,this==selectedSlot);    
     noStroke();
     if (isProcessing) {
       fill(0xFF, 0xFF, 0);
-      rect(1, 1, progress*(w-1), (h-1));
+      rect(2, 2, progress*(w-4), (h-4));
     }
-    noFill();
-    stroke(0xDF);
-    if (this==selectedSlot) stroke(0x00);
-    line(0, 0, w-1, 0);
-    line(0, 0, 0, h-1);
-    stroke(0x00);
-    if (this==selectedSlot) stroke(0xDF);
-    line(0, h-1, w-1, h-1);
-    line(w-1, 0, w-1, h-1);
-    stroke(0xFF);
-    if (this==selectedSlot) stroke(0x80);
-    line(1, 1, w-2, 1);
-    line(1, 1, 1, h-2);
-    stroke(0x80);
-    if (this==selectedSlot) stroke(0xFF);
-    line(1, h-2, w-2, h-2);
-    line(w-2, 1, w-2, h-2);
+    
     fill(0x20);
     text(url, 10, 10, w-20, h-20);
     popMatrix();
