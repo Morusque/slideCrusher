@@ -92,47 +92,6 @@ class ProcessRunner extends Thread {
       slot.updateProgressSample(0);
       slot.nSampleProcessed[c] = computeInterp(slot.nSample[c], slot, slot.parameterSet).nSampleProcessed;
     }
-
-    try {
-      // Convert double samples back into byte data
-      byte[] byteData = new byte[slot.audioDataLength];
-      for (int c = 0; c < slot.nbChannels; c++) {
-        for (int i = 0; i < slot.nSampleProcessed[c].length; i++) {
-          int sampleAsInt = (int)(slot.nSampleProcessed[c][i] * slot.maxSampleValue);
-
-          byte[] sampleBytes;
-          switch (slot.bytePerSample) {
-          case 1:
-            sampleBytes = new byte[] {(byte) sampleAsInt};
-            break;
-          case 2:
-            sampleBytes = ByteBuffer.allocate(2).order(slot.isBigEndian?ByteOrder.BIG_ENDIAN:ByteOrder.LITTLE_ENDIAN).putShort((short) sampleAsInt).array();
-            break;
-          case 3:
-            sampleBytes = new byte[3];
-            sampleBytes[0] = (byte) (sampleAsInt & 0xFF);
-            sampleBytes[1] = (byte) ((sampleAsInt >> 8) & 0xFF);
-            sampleBytes[2] = (byte) ((sampleAsInt >> 16) & 0xFF);
-            break;
-          default:
-            throw new IllegalArgumentException("Unsupported byte depth: " + slot.bytePerSample);
-          }
-
-          System.arraycopy(sampleBytes, 0, byteData, i*slot.bytePerSample*slot.nbChannels + c*slot.bytePerSample, slot.bytePerSample);
-        }
-      }
-
-      // Create a new AudioInputStream from the byte data
-      ByteArrayInputStream bais = new ByteArrayInputStream(byteData);
-      AudioInputStream outputAis = new AudioInputStream(bais, slot.format, slot.audioDataLength / slot.format.getFrameSize());
-
-      // Write the AudioInputStream to a file
-      AudioSystem.write(outputAis, AudioFileFormat.Type.WAVE, new File(sketchPath("output.wav")));
-    }
-    catch(Exception e) {
-      e.printStackTrace();
-    }
-
     slot.isProcessing = false;
   }
 }
@@ -442,6 +401,58 @@ class SampleSlot {
       println(e);
     }
   }
+  void exportSample() {
+    if (nSampleProcessed!=null && !isProcessing) {
+      try {
+        // Convert double samples back into byte data
+        byte[] byteData = new byte[audioDataLength];
+        for (int c = 0; c < nbChannels; c++) {
+          for (int i = 0; i < nSampleProcessed[c].length; i++) {
+            int sampleAsInt = (int)(nSampleProcessed[c][i] * maxSampleValue);
+
+            byte[] sampleBytes;
+            switch (bytePerSample) {
+            case 1:
+              sampleBytes = new byte[] {(byte) sampleAsInt};
+              break;
+            case 2:
+              sampleBytes = ByteBuffer.allocate(2).order(isBigEndian?ByteOrder.BIG_ENDIAN:ByteOrder.LITTLE_ENDIAN).putShort((short) sampleAsInt).array();
+              break;
+            case 3:
+              sampleBytes = new byte[3];
+              sampleBytes[0] = (byte) (sampleAsInt & 0xFF);
+              sampleBytes[1] = (byte) ((sampleAsInt >> 8) & 0xFF);
+              sampleBytes[2] = (byte) ((sampleAsInt >> 16) & 0xFF);
+              break;
+            default:
+              throw new IllegalArgumentException("Unsupported byte depth: " + bytePerSample);
+            }
+
+            System.arraycopy(sampleBytes, 0, byteData, i*bytePerSample*nbChannels + c*bytePerSample, bytePerSample);
+          }
+        }
+
+        // Create a new AudioInputStream from the byte data
+        ByteArrayInputStream bais = new ByteArrayInputStream(byteData);
+        AudioInputStream outputAis = new AudioInputStream(bais, format, audioDataLength / format.getFrameSize());
+
+        // Write the AudioInputStream to a file
+        String exportUrl = url;
+        int lastDot = 0;
+        for (int i=exportUrl.length()-1;i>=0;i--) {
+          if (exportUrl.charAt(i)=='.') {
+            lastDot = i;
+            break;
+          }
+        }
+        exportUrl = exportUrl.substring(0,lastDot)+"_processed.wav";
+        AudioSystem.write(outputAis, AudioFileFormat.Type.WAVE, new File(exportUrl));
+      }
+      catch(Exception e) {
+        e.printStackTrace();
+      }
+    }
+  }
   void updateProgressSample(float f) {
     progressSample = f;
     progress = ((float)progressCurrentChannel/nbChannels)+(progressSample/nbChannels);
@@ -453,13 +464,13 @@ class SampleSlot {
   void draw() {
     pushMatrix();
     translate(x, y);
-    UIRectangle(0,0,w,h,this==selectedSlot,this==selectedSlot);    
+    UIRectangle(0, 0, w, h, this==selectedSlot, this==selectedSlot);
     noStroke();
     if (isProcessing) {
       fill(0xFF, 0xFF, 0);
       rect(2, 2, progress*(w-4), (h-4));
     }
-    
+
     fill(0x20);
     text(url, 10, 10, w-20, h-20);
     popMatrix();

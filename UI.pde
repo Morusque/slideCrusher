@@ -176,6 +176,18 @@ void setBasicUIElements() {
   playCurrentSlot.setTooltip(tooltip, "play selected sample (original or processed if applicable)");
   uiElements.add(playCurrentSlot);
 
+  Button exportCurrentSlot = new Button("exportCurrentSlot", 410, 640, 150, 20);
+  exportCurrentSlot.updateOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      if (selectedSlot!=null) {
+        selectedSlot.exportSample();
+      }
+    }
+  };
+  exportCurrentSlot.setTooltip(tooltip, "export current slot (at same location with a _processed suffix)");
+  uiElements.add(exportCurrentSlot);
+
   for (UIElement e : uiElements) if (e.updateOperation!=null) e.updateOperation.execute();
 }
 
