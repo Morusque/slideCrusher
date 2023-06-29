@@ -188,6 +188,18 @@ void setBasicUIElements() {
   exportCurrentSlot.setTooltip(tooltip, "export current slot (at same location with a _processed suffix)");
   uiElements.add(exportCurrentSlot);
 
+  RadioButtons test = new RadioButtons("test", 100, 100, 200, 20, 4);
+  test.updateOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      if (selectedSlot!=null) {
+        selectedSlot.exportSample();
+      }
+    }
+  };
+  test.setTooltip(tooltip, "test");
+  uiElements.add(test);
+
   for (UIElement e : uiElements) if (e.updateOperation!=null) e.updateOperation.execute();
 }
 
@@ -222,6 +234,40 @@ abstract class UIElement {
   void setTooltip(Tooltip tooltip, String description) {
     tooltip.tippedElements.add(this);
     this.description = description;
+  }
+}
+
+class RadioButtons extends UIElement {
+  int value;
+  Button[] buttons;
+  RadioButtons(String name, float x, float y, float w, float h, int numberOfButtons) {
+    super(name, x, y, w, h);
+    RadioButtons thisRadio = this;
+    buttons = new Button[numberOfButtons];
+    for (int i=0; i<numberOfButtons; i++) {
+      buttons[i] = new Button(name, x+i*w/numberOfButtons, y, w/numberOfButtons, h);
+      buttons[i].updateOperation = new UpdateOperation() {
+        @Override
+          public void execute() {
+          println(thisRadio);
+        }
+      };
+    }
+  }
+  void draw() {
+    for (Button b : buttons) b.draw();
+  }
+
+  void mousePressed(float mX, float mY) {
+    for (Button b : buttons) b.mousePressed(mX, mY);
+  }
+
+  void mouseReleased(float mX, float mY) {
+    for (Button b : buttons) b.mouseReleased(mX, mY);
+  }
+
+  void setUpdateOperation(UpdateOperation updateOperation) {
+    this.updateOperation = updateOperation;
   }
 }
 

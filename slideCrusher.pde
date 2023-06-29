@@ -10,7 +10,6 @@ import java.util.Random;
 import ddf.minim.*;
 
 // make process/export/play(s)/remove buttons from inside the slots
-// exported as filename_processed or dialog
 // uielements for int choices
 // actual UI values, display max sample time as Hz
 // handle very long file names
