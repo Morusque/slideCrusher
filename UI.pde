@@ -220,30 +220,9 @@ class Button extends UIElement {
   }
 
   void draw() {
+    UIRectangle(x, y, w, h, isDragged, isInside(mouseX, mouseY));
     pushMatrix();
     translate(x, y);
-    strokeWeight(1);
-    noStroke();
-    fill(0xC0);
-    if (isInside(mouseX, mouseY)) fill(0xE0);
-    rect(0, 0, w, h);
-    noFill();
-    stroke(0xDF);
-    if (isDragged) stroke(0x00);
-    line(0, 0, w-1, 0);
-    line(0, 0, 0, h-1);
-    stroke(0x00);
-    if (isDragged) stroke(0xDF);
-    line(0, h-1, w-1, h-1);
-    line(w-1, 0, w-1, h-1);
-    stroke(0xFF);
-    if (isDragged) stroke(0x80);
-    line(1, 1, w-2, 1);
-    line(1, 1, 1, h-2);
-    stroke(0x80);
-    if (isDragged) stroke(0xFF);
-    line(1, h-2, w-2, h-2);
-    line(w-2, 1, w-2, h-2);
     fill(0x20);
     if (showLabel) text(name, 6, h-6);
     popMatrix();
@@ -285,9 +264,8 @@ class Slider extends UIElement {
     translate(x, y);
     noStroke();
     fill(0xC0);
-    if (isInside(mouseX, mouseY)) fill(0xD0);
     rect(0, 0, w, h);
-    if (isDragged) {
+    if (isInside(mouseX, mouseY) || isDragged) {
       noFill();
       stroke(0);
       for (int x=0; x<w; x+=2) {
@@ -310,9 +288,9 @@ class Slider extends UIElement {
       else line(0, floor(h/2-2)+i, w, floor(h/2-2)+i);
     }
 
-    stroke(0, 0, 0xFF);
-    if (vertical) line(0, h-value*h, w, h-value*h);
-    else line(value*w, 0, value*w, h);
+    if (vertical) UIRectangle(0, h-(value*h)-4, w, 8, false, isDragged);
+    else UIRectangle(value*w-4, 0, 8, h, false, isDragged);
+
     fill(0x50);
     if (showLabel) {
       if (vertical) text(name+" "+round(scaledValue*100.0f)/100.0f, 0, h+14);
@@ -367,7 +345,10 @@ class Tooltip extends UIElement {
       if (e==showing) {
         if (!e.isInside(mouseX, mouseY)&&!e.isDragged) showing=null;
       } else {
-        if (e.isInside(mouseX, mouseY)) showing=e;
+        if (e.isInside(mouseX, mouseY)) {
+          if (showing==null) showing=e;
+          else if (showing.isDragged) showing=e;
+        }
       }
     }
     pushMatrix();
@@ -398,4 +379,32 @@ class Container extends UIElement {
   void draw() {
     for (UIElement e : elements) e.draw();
   }
+}
+
+void UIRectangle(float x, float y, float w, float h, boolean pushed, boolean highlighted) {
+  strokeWeight(1);
+  noStroke();
+  pushMatrix();
+  translate(x, y);
+  fill(0xC0);
+  if (highlighted) fill(0xE0);
+  rect(0, 0, w, h);
+  noFill();
+  stroke(0xDF);
+  if (pushed) stroke(0x00);
+  line(0, 0, w-1, 0);
+  line(0, 0, 0, h-1);
+  stroke(0x00);
+  if (pushed) stroke(0xDF);
+  line(0, h-1, w-1, h-1);
+  line(w-1, 0, w-1, h-1);
+  stroke(0xFF);
+  if (pushed) stroke(0x80);
+  line(1, 1, w-2, 1);
+  line(1, 1, 1, h-2);
+  stroke(0x80);
+  if (pushed) stroke(0xFF);
+  line(1, h-2, w-2, h-2);
+  line(w-2, 1, w-2, h-2);
+  popMatrix();
 }

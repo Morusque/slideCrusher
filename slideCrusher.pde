@@ -14,7 +14,6 @@ import ddf.minim.*;
 // uielements for int choices
 // actual UI values, display max sample time as Hz
 // handle very long file names
-// add optim mode : max non cumulative difference
 // preview left or right
 
 // parameters
@@ -154,10 +153,10 @@ void draw() {
   line(1, height-2, width-2, height-2);
   line(width-2, 1, width-2, height-2);
   fill(0x20);
-  
+
   if (sampleSlots.size()==0) {
     fill(0);
-    text("drag and drop samples here",20,30);
+    text("drag and drop samples here", 20, 30);
   }
 
   noFill();
@@ -182,6 +181,18 @@ void draw() {
       line(i, -constrain((float)displaySine[i]*previewGain, -1, 1)*displayMax, i, -constrain((float)displayInterp[i]*previewGain, -1, 1)*displayMax);
     }
   }
+  if (previewSet.optimizationMethod==2) {
+    int lastLandmark = 0;
+    stroke(0xCC, 0xCC, 0xFF);
+    for (int i=0; i<displaySine.length; i++) {
+      if (displayLandmarks[i]) {
+        line(lastLandmark, -constrain((float)displayInterp[lastLandmark]*previewGain, -1, 1)*displayMax, i, -constrain((float)displayInterp[lastLandmark]*previewGain, -1, 1)*displayMax);
+        line(lastLandmark, -constrain((float)displayInterp[i]*previewGain, -1, 1)*displayMax, i, -constrain((float)displayInterp[i]*previewGain, -1, 1)*displayMax);
+        lastLandmark = i;
+      }
+    }
+  }
+
   // original
   stroke(0, 0x50, 0);
   strokeWeight(2);
