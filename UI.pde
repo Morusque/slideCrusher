@@ -53,22 +53,21 @@ void setBasicUIElements() {
   uiElements.add(sliderDefaultMaxSlideTimeSmp);
 
   // optimizationMethod method
-  Slider sliderOptimizationMethod = new Slider("optimizationMethod", 410, 410, 200, 20, 0, false, 4);
-  UpdateOperation sliderOptimizationMethodOperation = new UpdateOperation() {
+  RadioButtons radioOptimizationMethod = new RadioButtons("optimizationMethod", 410, 410, 250, 20, 1, 4);
+  radioOptimizationMethod.setLabels(new String[]{"no","integral","gap","zero"});
+  radioOptimizationMethod.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
-      sliderOptimizationMethod.scaledValue = floor(sliderOptimizationMethod.value*(sliderOptimizationMethod.tickMarks-1));
-      previewSet.optimizationMethod = floor(sliderOptimizationMethod.scaledValue);
-      if (previewSet.optimizationMethod == 0) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nno optimization";
-      if (previewSet.optimizationMethod == 1) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd more sampling points to make sure the difference integral (blue zone) doesn't exeed the threshold";
-      if (previewSet.optimizationMethod == 2) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd more sampling points to make sure the difference between consecutive sampled points doesn't exeed the threshold";
-      if (previewSet.optimizationMethod == 3) sliderOptimizationMethod.description = "how to optimize the sampling time : \r\nadd sampling points when crossing zero";
+      previewSet.optimizationMethod = radioOptimizationMethod.value;
+      if (previewSet.optimizationMethod == 0) radioOptimizationMethod.description = "how to optimize the sampling time : \r\nno optimization";
+      if (previewSet.optimizationMethod == 1) radioOptimizationMethod.description = "how to optimize the sampling time : \r\nadd more sampling points to make sure the pre/post difference (blue zone) doesn't exeed the threshold";
+      if (previewSet.optimizationMethod == 2) radioOptimizationMethod.description = "how to optimize the sampling time : \r\nadd more sampling points to make sure the difference between consecutive sampled points doesn't exeed the threshold";
+      if (previewSet.optimizationMethod == 3) radioOptimizationMethod.description = "how to optimize the sampling time : \r\nadd sampling points when crossing zero";
       updateDisplay();
     }
   };
-  sliderOptimizationMethod.setUpdateOperation(sliderOptimizationMethodOperation);
-  sliderOptimizationMethod.setTooltip(tooltip, "how to optimize the sampling time");
-  uiElements.add(sliderOptimizationMethod);
+  radioOptimizationMethod.setTooltip(tooltip, "how to optimize the sampling time");
+  uiElements.add(radioOptimizationMethod);
 
   // totalDifferenceThreshold
   Slider sliderTotalDifferenceThreshold = new Slider("totalDifferenceThreshold", 410, 440, 200, 20, 0.5, false, 0);
@@ -99,24 +98,23 @@ void setBasicUIElements() {
   uiElements.add(sliderCompressionFactor);
 
   // interpolationType
-  Slider sliderInterpolationType = new Slider("interpolationType", 410, 510, 200, 20, 0, false, 6);
-  UpdateOperation sliderInterpolationTypeOperation = new UpdateOperation() {
+  RadioButtons radioInterpolationType = new RadioButtons("interpolationType", 410, 510, 250, 20, 0, 6);
+  radioInterpolationType.setLabels(new String[]{"snh","lin","s","saw","box","zero"});
+  radioInterpolationType.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
-      sliderInterpolationType.scaledValue = floor(sliderInterpolationType.value*(sliderInterpolationType.tickMarks-1));
-      previewSet.interpolationType = floor(sliderInterpolationType.scaledValue);
-      if (previewSet.interpolationType == 0) sliderInterpolationType.description = "interpolation type : \r\nsample and hold";
-      if (previewSet.interpolationType == 1) sliderInterpolationType.description = "interpolation type : \r\nlinear";
-      if (previewSet.interpolationType == 2) sliderInterpolationType.description = "interpolation type : \r\ns curve";
-      if (previewSet.interpolationType == 3) sliderInterpolationType.description = "interpolation type : \r\nsawtooth";
-      if (previewSet.interpolationType == 4) sliderInterpolationType.description = "interpolation type : \r\nboxcar";
-      if (previewSet.interpolationType == 5) sliderInterpolationType.description = "interpolation type : \r\nzero";
+      previewSet.interpolationType = radioInterpolationType.value;
+      if (previewSet.interpolationType == 0) radioInterpolationType.description = "interpolation type : \r\nsample and hold";
+      if (previewSet.interpolationType == 1) radioInterpolationType.description = "interpolation type : \r\nlinear";
+      if (previewSet.interpolationType == 2) radioInterpolationType.description = "interpolation type : \r\ns curve";
+      if (previewSet.interpolationType == 3) radioInterpolationType.description = "interpolation type : \r\nsawtooth";
+      if (previewSet.interpolationType == 4) radioInterpolationType.description = "interpolation type : \r\nboxcar";
+      if (previewSet.interpolationType == 5) radioInterpolationType.description = "interpolation type : \r\nzero";
       updateDisplay();
     }
   };
-  sliderInterpolationType.setUpdateOperation(sliderInterpolationTypeOperation);
-  sliderInterpolationType.setTooltip(tooltip, "interpolation type");
-  uiElements.add(sliderInterpolationType);
+  radioInterpolationType.setTooltip(tooltip, "interpolation type");
+  uiElements.add(radioInterpolationType);
 
   // sinusAddition
   Slider sliderSinusAddition = new Slider("sinusAddition", 410, 540, 200, 20, 0.5, false, 0);
@@ -188,18 +186,6 @@ void setBasicUIElements() {
   exportCurrentSlot.setTooltip(tooltip, "export current slot (at same location with a _processed suffix)");
   uiElements.add(exportCurrentSlot);
 
-  RadioButtons test = new RadioButtons("test", 100, 100, 200, 20, 4);
-  test.updateOperation = new UpdateOperation() {
-    @Override
-      public void execute() {
-      if (selectedSlot!=null) {
-        selectedSlot.exportSample();
-      }
-    }
-  };
-  test.setTooltip(tooltip, "test");
-  uiElements.add(test);
-
   for (UIElement e : uiElements) if (e.updateOperation!=null) e.updateOperation.execute();
 }
 
@@ -239,31 +225,79 @@ abstract class UIElement {
 
 class RadioButtons extends UIElement {
   int value;
-  Button[] buttons;
-  RadioButtons(String name, float x, float y, float w, float h, int numberOfButtons) {
+  Toggle[] toggles;
+  RadioButtons(String name, float x, float y, float w, float h, int defaultValue, int numberOfButtons) {
     super(name, x, y, w, h);
     RadioButtons thisRadio = this;
-    buttons = new Button[numberOfButtons];
+    toggles = new Toggle[numberOfButtons];
     for (int i=0; i<numberOfButtons; i++) {
-      buttons[i] = new Button(name, x+i*w/numberOfButtons, y, w/numberOfButtons, h);
-      buttons[i].updateOperation = new UpdateOperation() {
+      Toggle thisToggle = new Toggle(name, x+i*w/numberOfButtons, y, w/numberOfButtons, h);
+      toggles[i] = thisToggle;
+      toggles[i].value = i;
+      toggles[i].updateOperation = new UpdateOperation() {
         @Override
           public void execute() {
-          println(thisRadio);
+          thisRadio.value = thisToggle.value;
         }
       };
     }
+    this.value = defaultValue;
+    for (Toggle t : toggles) t.pressed = (t.value==value);
   }
   void draw() {
-    for (Button b : buttons) b.draw();
+    for (Toggle t : toggles) t.draw();
+    fill(0x50);
+    if (showLabel) text(name, x+w+5, y+h-5);
   }
 
   void mousePressed(float mX, float mY) {
-    for (Button b : buttons) b.mousePressed(mX, mY);
+    for (Toggle t : toggles) t.mousePressed(mX, mY);
   }
 
   void mouseReleased(float mX, float mY) {
-    for (Button b : buttons) b.mouseReleased(mX, mY);
+    for (Toggle t : toggles) t.mouseReleased(mX, mY);
+    for (Toggle t : toggles) if (t.value!=value) t.pressed = false;
+    updateOperation.execute();
+  }
+
+  void setUpdateOperation(UpdateOperation updateOperation) {
+    this.updateOperation = updateOperation;
+  }
+  
+  void setLabels(String[] labels) {
+    for (int i=0;i<labels.length;i++) toggles[i].name = labels[i];
+  }
+}
+
+class Toggle extends UIElement {
+  int value;
+  boolean pressed;
+
+  Toggle(String name, float x, float y, float w, float h) {
+    super(name, x, y, w, h);
+  }
+
+  void draw() {
+    UIRectangle(x, y, w, h, pressed, isInside(mouseX, mouseY));
+    pushMatrix();
+    translate(x, y);
+    fill(0x20);
+    if (showLabel) text(name, 6, h-6);
+    popMatrix();
+  }
+
+  void mousePressed(float mX, float mY) {
+    if (isInside(mX, mY)) {
+      isDragged = true;
+    }
+  }
+
+  void mouseReleased(float mX, float mY) {
+    if (isInside(mX, mY) && updateOperation != null) {
+      pressed ^= true;
+      updateOperation.execute();
+    }
+    if (isDragged) isDragged = false;
   }
 
   void setUpdateOperation(UpdateOperation updateOperation) {

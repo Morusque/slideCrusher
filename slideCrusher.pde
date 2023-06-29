@@ -14,6 +14,7 @@ import ddf.minim.*;
 // actual UI values, display max sample time as Hz
 // handle very long file names
 // preview left or right
+// preview legend
 
 // parameters
 ParameterSet previewSet = new ParameterSet();
