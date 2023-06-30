@@ -1,4 +1,3 @@
-
 import drop.*;
 
 import java.io.*;
@@ -9,12 +8,13 @@ import java.util.Random;
 
 import ddf.minim.*;
 
-// make process/export/play(s)/remove buttons from inside the slots
-// uielements for int choices
+// invert some sliders ?
+// notify when exported
+// better tooltip for radios (hover)
 // actual UI values, display max sample time as Hz
-// handle very long file names
 // preview left or right
 // preview legend
+// "play original" button
 
 // parameters
 ParameterSet previewSet = new ParameterSet();
@@ -25,9 +25,9 @@ float previewGain;
 String sourceUrl = "";
 
 // display
-double[] displaySine = new double[400-20];
-double[] displayInterp = new double[400-20];
-boolean[] displayLandmarks = new boolean[400-20];
+double[] displaySine = new double[800-50];
+double[] displayInterp = new double[800-50];
+boolean[] displayLandmarks = new boolean[800-50];
 
 ArrayList<SampleSlot> sampleSlots = new ArrayList<SampleSlot>();
 SampleSlot selectedSlot;
@@ -48,7 +48,7 @@ void setup() {
 
 void dropEvent(DropEvent theDropEvent) {
   if (theDropEvent.isFile()) {
-    selectedSlot = new SampleSlot(10, 10+sampleSlots.size()*80);
+    selectedSlot = new SampleSlot(10, 350+sampleSlots.size()*50);
     selectedSlot.url = theDropEvent.toString();
     selectedSlot.loadFile();
     selectedSlot.normalizeDisplay();
@@ -113,14 +113,9 @@ void draw() {
   line(width-2, 1, width-2, height-2);
   fill(0x20);
 
-  if (sampleSlots.size()==0) {
-    fill(0);
-    text("drag and drop samples here", 20, 30);
-  }
-
   noFill();
   pushMatrix();
-  translate(400+10, 10);
+  translate(30, 10);
   noStroke();
   fill(0xFF);
   rect(0, 0, displaySine.length, 300);
@@ -178,7 +173,16 @@ void draw() {
 
   popMatrix();
 
-  for (int i = 0; i < sampleSlots.size(); i++) sampleSlots.get(i).draw();
+  if (sampleSlots.size()==0) {
+    fill(0);
+    text("drag and drop samples", 50, 30);
+  }
+  fill(0, 0x50, 0);
+  text("input", 700, 300);
+  fill(0, 0, 0xFF);
+  text("output", 740, 300);
+
+  for (int i = 0; i < sampleSlots.size(); i++) if (i<5) sampleSlots.get(i).draw();
   for (UIElement e : uiElements) e.draw();
 }
 
@@ -194,6 +198,7 @@ void mouseDragged() {
 
 void mouseReleased() {
   for (UIElement e : uiElements) e.mouseReleased(mouseX, mouseY);
+  for (SampleSlot s : sampleSlots) s.mouseReleased(mouseX, mouseY);
 }
 
 ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet) {
@@ -338,7 +343,7 @@ class SampleSlot {
   ParameterSet parameterSet;
   float x, y;
   float w = 350;
-  float h = 70;
+  float h = 40;
   SampleSlot(float x, float y) {
     this.x=x;
     this.y=y;
@@ -439,13 +444,13 @@ class SampleSlot {
         // Write the AudioInputStream to a file
         String exportUrl = url;
         int lastDot = 0;
-        for (int i=exportUrl.length()-1;i>=0;i--) {
+        for (int i=exportUrl.length()-1; i>=0; i--) {
           if (exportUrl.charAt(i)=='.') {
             lastDot = i;
             break;
           }
         }
-        exportUrl = exportUrl.substring(0,lastDot)+"_processed.wav";
+        exportUrl = exportUrl.substring(0, lastDot)+"_processed.wav";
         AudioSystem.write(outputAis, AudioFileFormat.Type.WAVE, new File(exportUrl));
       }
       catch(Exception e) {
@@ -472,7 +477,9 @@ class SampleSlot {
     }
 
     fill(0x20);
-    text(url, 10, 10, w-20, h-20);
+    String urlCropped = url.substring(0);
+    if (urlCropped.length()>40) urlCropped = "..."+url.substring(max(url.length()-40,0),url.length());
+    text(urlCropped, 10, 10, w-20, h-20);
     popMatrix();
   }
   void process() {
@@ -502,7 +509,7 @@ class SampleSlot {
       }
     }
     if (loudest!=0) previewGain = 0.9/loudest;
-    previewOffset = loudestPosition-((float)displaySine.length*0.5f/nSample[0].length);
+    previewOffset = constrain(loudestPosition-((float)displaySine.length*0.5f/nSample[0].length),0,1);
     try {
       ((Slider)getUiElementCalled("previewOffset")).value = previewOffset;
       ((Slider)getUiElementCalled("previewOffset")).updateOperation.execute();
@@ -519,6 +526,8 @@ class SampleSlot {
       selectedSlot = this;
       updateDisplay();
     }
+  }
+  void mouseReleased(float mX, float mY) {
   }
 }
 

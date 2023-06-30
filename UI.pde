@@ -5,11 +5,11 @@ Tooltip tooltip;
 
 void setBasicUIElements() {
 
-  tooltip = new Tooltip("tooltip", 10, 600, 300, 80);
+  tooltip = new Tooltip("tooltip", 10, 600, 350, 80);
   uiElements.add(tooltip);
 
   // previewOffset
-  Slider sliderPreviewOffset = new Slider("previewOffset", 410, 311, 380, 20, 0.5, false, 0);
+  Slider sliderPreviewOffset = new Slider("previewOffset", 30, 311, 800-50, 20, 0.5, false, 0);
   UpdateOperation sliderPreviewOffsetOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -24,7 +24,7 @@ void setBasicUIElements() {
   uiElements.add(sliderPreviewOffset);
 
   // previewGain
-  Slider sliderPreviewGain = new Slider("previewGain", 390, 10, 20, 300, 0.03, true, 0);
+  Slider sliderPreviewGain = new Slider("previewGain", 10, 10, 20, 300, 0.03, true, 0);
   UpdateOperation sliderPreviewGainOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -53,8 +53,8 @@ void setBasicUIElements() {
   uiElements.add(sliderDefaultMaxSlideTimeSmp);
 
   // optimizationMethod method
-  RadioButtons radioOptimizationMethod = new RadioButtons("optimizationMethod", 410, 410, 250, 20, 1, 4);
-  radioOptimizationMethod.setLabels(new String[]{"no","integral","gap","zero"});
+  RadioButtons radioOptimizationMethod = new RadioButtons("optimizationMethod", 410, 410, 250, 20, 0, 4);
+  radioOptimizationMethod.setLabels(new String[]{"no", "integral", "gap", "zero"});
   radioOptimizationMethod.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -99,7 +99,7 @@ void setBasicUIElements() {
 
   // interpolationType
   RadioButtons radioInterpolationType = new RadioButtons("interpolationType", 410, 510, 250, 20, 0, 6);
-  radioInterpolationType.setLabels(new String[]{"snh","lin","s","saw","box","zero"});
+  radioInterpolationType.setLabels(new String[]{"snh", "lin", "s", "saw", "box", "zero"});
   radioInterpolationType.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -146,7 +146,7 @@ void setBasicUIElements() {
   sliderIIRFilter.setTooltip(tooltip, "applies an IIR filter in the process");
   uiElements.add(sliderIIRFilter);
 
-  Button processExportRemoveButton = new Button("processExportRemove", 600, 610, 150, 20);
+  Button processExportRemoveButton = new Button("process", 600, 610, 150, 20);
   processExportRemoveButton.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -185,6 +185,20 @@ void setBasicUIElements() {
   };
   exportCurrentSlot.setTooltip(tooltip, "export current slot (at same location with a _processed suffix)");
   uiElements.add(exportCurrentSlot);
+
+  Button removeCurrentSlot = new Button("removeSlot", 600, 640, 150, 20);
+  removeCurrentSlot.updateOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      if (selectedSlot!=null) {
+        sampleSlots.remove(selectedSlot);
+        for (int i=0; i<sampleSlots.size(); i++) sampleSlots.get(i).y=350+i*50;
+        if (sampleSlots.size()>0) selectedSlot = sampleSlots.get(0);
+      }
+    }
+  };
+  removeCurrentSlot.setTooltip(tooltip, "remove selected slot");
+  uiElements.add(removeCurrentSlot);
 
   for (UIElement e : uiElements) if (e.updateOperation!=null) e.updateOperation.execute();
 }
@@ -263,9 +277,9 @@ class RadioButtons extends UIElement {
   void setUpdateOperation(UpdateOperation updateOperation) {
     this.updateOperation = updateOperation;
   }
-  
+
   void setLabels(String[] labels) {
-    for (int i=0;i<labels.length;i++) toggles[i].name = labels[i];
+    for (int i=0; i<labels.length; i++) toggles[i].name = labels[i];
   }
 }
 
