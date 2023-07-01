@@ -10,11 +10,10 @@ import ddf.minim.*;
 
 // invert some sliders ?
 // notify when exported
-// better tooltip for radios (hover)
 // actual UI values, display max sample time as Hz
 // preview left or right
-// preview legend
-// "play original" button
+// gray out ununsed UI elements
+// destroy selected sample if no sample left
 
 // parameters
 ParameterSet previewSet = new ParameterSet();
@@ -478,7 +477,7 @@ class SampleSlot {
 
     fill(0x20);
     String urlCropped = url.substring(0);
-    if (urlCropped.length()>40) urlCropped = "..."+url.substring(max(url.length()-40,0),url.length());
+    if (urlCropped.length()>40) urlCropped = "..."+url.substring(max(url.length()-40, 0), url.length());
     text(urlCropped, 10, 10, w-20, h-20);
     popMatrix();
   }
@@ -486,16 +485,22 @@ class SampleSlot {
     parameterSet = previewSet.copy();
     new ProcessRunner(this).start();
   }
-  float[] getSampleForPlayback(int channel) {
-    if (!isProcessing&&nSampleProcessed!=null) {
-      float[] preview = new float[nSampleProcessed[channel].length];
+  float[] getOriginalSampleForPlayback(int channel) {
+    float[] preview = new float[nSample[channel].length];
+    for (int i=0; i<preview.length; i++) preview[i] = (float)nSample[channel][i];
+    return preview;
+  }
+  float[] getProcessedSampleForPlayback(int channel) {
+    float[] preview = null;
+    if (processedSampleAvailable()) {
+      preview = new float[nSampleProcessed[channel].length];
       for (int i=0; i<preview.length; i++) preview[i] = (float)nSampleProcessed[channel][i];
       return preview;
-    } else {
-      float[] preview = new float[nSample[channel].length];
-      for (int i=0; i<preview.length; i++) preview[i] = (float)nSample[channel][i];
-      return preview;
     }
+    return preview;
+  }
+  boolean processedSampleAvailable()  {
+    return !isProcessing&&nSampleProcessed!=null;
   }
   void normalizeDisplay() {
     float loudest = 0;
@@ -509,7 +514,7 @@ class SampleSlot {
       }
     }
     if (loudest!=0) previewGain = 0.9/loudest;
-    previewOffset = constrain(loudestPosition-((float)displaySine.length*0.5f/nSample[0].length),0,1);
+    previewOffset = constrain(loudestPosition-((float)displaySine.length*0.5f/nSample[0].length), 0, 1);
     try {
       ((Slider)getUiElementCalled("previewOffset")).value = previewOffset;
       ((Slider)getUiElementCalled("previewOffset")).updateOperation.execute();

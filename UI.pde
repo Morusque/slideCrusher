@@ -59,10 +59,10 @@ void setBasicUIElements() {
     @Override
       public void execute() {
       previewSet.optimizationMethod = radioOptimizationMethod.value;
-      if (previewSet.optimizationMethod == 0) radioOptimizationMethod.description = "how to optimize the sampling time : \r\nno optimization";
-      if (previewSet.optimizationMethod == 1) radioOptimizationMethod.description = "how to optimize the sampling time : \r\nadd more sampling points to make sure the pre/post difference (blue zone) doesn't exeed the threshold";
-      if (previewSet.optimizationMethod == 2) radioOptimizationMethod.description = "how to optimize the sampling time : \r\nadd more sampling points to make sure the difference between consecutive sampled points doesn't exeed the threshold";
-      if (previewSet.optimizationMethod == 3) radioOptimizationMethod.description = "how to optimize the sampling time : \r\nadd sampling points when crossing zero";
+      if (previewSet.optimizationMethod == 0) radioOptimizationMethod.description = "how to optimize the sampling time \r\ncurrent type : \r\nno optimization";
+      if (previewSet.optimizationMethod == 1) radioOptimizationMethod.description = "how to optimize the sampling time \r\ncurrent type : \r\nadd more sampling points to make sure the pre/post difference (blue zone) doesn't exeed the threshold";
+      if (previewSet.optimizationMethod == 2) radioOptimizationMethod.description = "how to optimize the sampling time \r\ncurrent type : \r\nadd more sampling points to make sure the difference between consecutive sampled points doesn't exeed the threshold";
+      if (previewSet.optimizationMethod == 3) radioOptimizationMethod.description = "how to optimize the sampling time \r\ncurrent type : \r\nadd sampling points when crossing zero";
       updateDisplay();
     }
   };
@@ -104,12 +104,12 @@ void setBasicUIElements() {
     @Override
       public void execute() {
       previewSet.interpolationType = radioInterpolationType.value;
-      if (previewSet.interpolationType == 0) radioInterpolationType.description = "interpolation type : \r\nsample and hold";
-      if (previewSet.interpolationType == 1) radioInterpolationType.description = "interpolation type : \r\nlinear";
-      if (previewSet.interpolationType == 2) radioInterpolationType.description = "interpolation type : \r\ns curve";
-      if (previewSet.interpolationType == 3) radioInterpolationType.description = "interpolation type : \r\nsawtooth";
-      if (previewSet.interpolationType == 4) radioInterpolationType.description = "interpolation type : \r\nboxcar";
-      if (previewSet.interpolationType == 5) radioInterpolationType.description = "interpolation type : \r\nzero";
+      if (previewSet.interpolationType == 0) radioInterpolationType.description = "current interpolation type : \r\nsample and hold";
+      if (previewSet.interpolationType == 1) radioInterpolationType.description = "current interpolation type : \r\nlinear";
+      if (previewSet.interpolationType == 2) radioInterpolationType.description = "current interpolation type : \r\ns curve";
+      if (previewSet.interpolationType == 3) radioInterpolationType.description = "current interpolation type : \r\nsawtooth";
+      if (previewSet.interpolationType == 4) radioInterpolationType.description = "current interpolation type : \r\nboxcar";
+      if (previewSet.interpolationType == 5) radioInterpolationType.description = "current interpolation type : \r\nzero";
       updateDisplay();
     }
   };
@@ -146,7 +146,7 @@ void setBasicUIElements() {
   sliderIIRFilter.setTooltip(tooltip, "applies an IIR filter in the process");
   uiElements.add(sliderIIRFilter);
 
-  Button processExportRemoveButton = new Button("process", 600, 610, 150, 20);
+  Button processExportRemoveButton = new Button("process", 410, 610, 100, 20);
   processExportRemoveButton.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -156,7 +156,7 @@ void setBasicUIElements() {
   processExportRemoveButton.setTooltip(tooltip, "process selected sample");
   uiElements.add(processExportRemoveButton);
 
-  Button playCurrentSlot = new Button("playCurrentSlot", 410, 610, 150, 20);
+  Button playCurrentSlot = new Button("play input", 550, 610, 100, 20);
   playCurrentSlot.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -165,16 +165,36 @@ void setBasicUIElements() {
         sample.close();
       }
       if (selectedSlot!=null) {
-        if (selectedSlot.nbChannels == 1) sample = minim.createSample(selectedSlot.getSampleForPlayback(0), selectedSlot.format);
-        if (selectedSlot.nbChannels > 1) sample = minim.createSample(selectedSlot.getSampleForPlayback(0), selectedSlot.getSampleForPlayback(1), selectedSlot.format);
+        if (selectedSlot.nbChannels == 1) sample = minim.createSample(selectedSlot.getOriginalSampleForPlayback(0), selectedSlot.format);
+        if (selectedSlot.nbChannels > 1) sample = minim.createSample(selectedSlot.getOriginalSampleForPlayback(0), selectedSlot.getOriginalSampleForPlayback(1), selectedSlot.format);
         sample.trigger();
       }
     }
   };
-  playCurrentSlot.setTooltip(tooltip, "play selected sample (original or processed if applicable)");
+  playCurrentSlot.setTooltip(tooltip, "play selected sample (original)");
   uiElements.add(playCurrentSlot);
 
-  Button exportCurrentSlot = new Button("exportCurrentSlot", 410, 640, 150, 20);
+  Button playCurrentSlotOut = new Button("play output", 550, 630, 100, 20);
+  playCurrentSlotOut.updateOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      if (sample!=null) {
+        sample.stop();
+        sample.close();
+      }
+      if (selectedSlot!=null) {
+        if (selectedSlot.processedSampleAvailable()) {
+          if (selectedSlot.nbChannels == 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0), selectedSlot.format);
+          if (selectedSlot.nbChannels > 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0), selectedSlot.getProcessedSampleForPlayback(1), selectedSlot.format);
+          sample.trigger();
+        }
+      }
+    }
+  };
+  playCurrentSlotOut.setTooltip(tooltip, "play selected sample (processed)");
+  uiElements.add(playCurrentSlotOut);
+
+  Button exportCurrentSlot = new Button("export", 410, 630, 100, 20);
   exportCurrentSlot.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -186,7 +206,7 @@ void setBasicUIElements() {
   exportCurrentSlot.setTooltip(tooltip, "export current slot (at same location with a _processed suffix)");
   uiElements.add(exportCurrentSlot);
 
-  Button removeCurrentSlot = new Button("removeSlot", 600, 640, 150, 20);
+  Button removeCurrentSlot = new Button("remove", 410, 650, 100, 20);
   removeCurrentSlot.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -271,6 +291,9 @@ class RadioButtons extends UIElement {
   void mouseReleased(float mX, float mY) {
     for (Toggle t : toggles) t.mouseReleased(mX, mY);
     for (Toggle t : toggles) if (t.value!=value) t.pressed = false;
+    boolean onePressed = false;
+    for (Toggle t : toggles) onePressed = onePressed||t.pressed;
+    if (!onePressed && toggles.length>0) toggles[0].pressed=true;
     updateOperation.execute();
   }
 
