@@ -39,16 +39,28 @@ void setBasicUIElements() {
   uiElements.add(sliderPreviewGain);
 
   // defaultMaxSlideTimeSmp
-  Slider sliderDefaultMaxSlideTimeSmp = new Slider("defaultMaxSlideTimeSmp", 410, 370, 200, 20, 0.5, false, 0);
+  Slider sliderDefaultMaxSlideTimeSmp = new Slider("frequency", 410, 370, 200, 20, 0.5, false, 0);
   UpdateOperation sliderDefaultMaxSlideTimeSmpOperation = new UpdateOperation() {
     @Override
       public void execute() {
-      sliderDefaultMaxSlideTimeSmp.scaledValue = sliderDefaultMaxSlideTimeSmp.value;
-      previewSet.defaultMaxSlideTimeSmp = floor(map(pow(sliderDefaultMaxSlideTimeSmp.scaledValue, 5), 0, 1, 1, 5000));
+      sliderDefaultMaxSlideTimeSmp.scaledValue = floor(map(pow(sliderDefaultMaxSlideTimeSmp.value, 5), 0, 1, 1, 5000));
+      previewSet.defaultMaxSlideTimeSmp = sliderDefaultMaxSlideTimeSmp.scaledValue;
       updateDisplay();
     }
   };
   sliderDefaultMaxSlideTimeSmp.setUpdateOperation(sliderDefaultMaxSlideTimeSmpOperation);
+  LabelOperation sliderDefaultMaxSlideTimeSmpLabel = new LabelOperation() {
+    @Override
+    public String getLabel() {
+      float samplingFr = 44100;
+      if (selectedSlot!=null) if (selectedSlot.format!=null)  samplingFr = selectedSlot.format.getSampleRate();
+      // TODO update it only when necessary
+      float value = samplingFr/sliderDefaultMaxSlideTimeSmp.scaledValue;
+      value = round(value*100.0f)/100.0f;
+      return value + " Hz";
+    }
+  };
+  sliderDefaultMaxSlideTimeSmp.setLabelOperation(sliderDefaultMaxSlideTimeSmpLabel);  
   sliderDefaultMaxSlideTimeSmp.setTooltip(tooltip, "default sampling frequency \r\nsimilar to frequancy in a classic bitcrusher");
   uiElements.add(sliderDefaultMaxSlideTimeSmp);
 
@@ -70,7 +82,7 @@ void setBasicUIElements() {
   uiElements.add(radioOptimizationMethod);
 
   // totalDifferenceThreshold
-  Slider sliderTotalDifferenceThreshold = new Slider("totalDifferenceThreshold", 410, 440, 200, 20, 0.5, false, 0);
+  Slider sliderTotalDifferenceThreshold = new Slider("threshold", 410, 440, 200, 20, 0.5, false, 0);
   UpdateOperation sliderTotalDifferenceThresholdOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -84,7 +96,7 @@ void setBasicUIElements() {
   uiElements.add(sliderTotalDifferenceThreshold);
 
   // compressionFactor
-  Slider sliderCompressionFactor = new Slider("compressionFactor", 410, 470, 200, 20, 0.5, false, 0);
+  Slider sliderCompressionFactor = new Slider("compression", 410, 470, 200, 20, 0.5, false, 0);
   UpdateOperation sliderCompressionFactorOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -98,8 +110,8 @@ void setBasicUIElements() {
   uiElements.add(sliderCompressionFactor);
 
   // interpolationType
-  RadioButtons radioInterpolationType = new RadioButtons("interpolationType", 410, 510, 250, 20, 0, 6);
-  radioInterpolationType.setLabels(new String[]{"snh", "lin", "s", "saw", "box", "zero"});
+  RadioButtons radioInterpolationType = new RadioButtons("interpolation", 410, 510, 250, 20, 0, 6);
+  radioInterpolationType.setLabels(new String[]{"s&h", "lin", "s", "saw", "box", "zero"});
   radioInterpolationType.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -117,7 +129,7 @@ void setBasicUIElements() {
   uiElements.add(radioInterpolationType);
 
   // sinusAddition
-  Slider sliderSinusAddition = new Slider("sinusAddition", 410, 540, 200, 20, 0.5, false, 0);
+  Slider sliderSinusAddition = new Slider("sinus", 410, 540, 200, 20, 0.5, false, 0);
   UpdateOperation sliderSinusAdditionOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -133,7 +145,7 @@ void setBasicUIElements() {
   uiElements.add(sliderSinusAddition);
 
   // IIR filter
-  Slider sliderIIRFilter = new Slider("iirFilter", 410, 570, 200, 20, 0.0, false, 0);
+  Slider sliderIIRFilter = new Slider("filter", 410, 570, 200, 20, 0.0, false, 0);
   UpdateOperation sliderIIRFilterOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -220,6 +232,19 @@ void setBasicUIElements() {
   removeCurrentSlot.setTooltip(tooltip, "remove selected slot");
   uiElements.add(removeCurrentSlot);
 
+  RadioButtons displayChannelRadio = new RadioButtons("displayChannel", 600, 30, 150, 20, 0, 2);
+  displayChannelRadio.showLabel = false;
+  displayChannelRadio.setLabels(new String[]{"ch1", "ch2"});
+  displayChannelRadio.updateOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      displayChannel = displayChannelRadio.value;
+      updateDisplay();
+    }
+  };
+  displayChannelRadio.setTooltip(tooltip, "which channel to preview");
+  uiElements.add(displayChannelRadio);
+
   for (UIElement e : uiElements) if (e.updateOperation!=null) e.updateOperation.execute();
 }
 
@@ -230,6 +255,7 @@ abstract class UIElement {
   String description = "";
   boolean isDragged;
   boolean showLabel = true;
+  LabelOperation labelOperation;
 
   UIElement(String name, float x, float y, float w, float h) {
     this.name = name;
@@ -255,6 +281,12 @@ abstract class UIElement {
     tooltip.tippedElements.add(this);
     this.description = description;
   }
+  void setUpdateOperation(UpdateOperation updateOperation) {
+    this.updateOperation = updateOperation;
+  }  
+  void setLabelOperation(LabelOperation labelOperation) {
+    this.labelOperation = labelOperation;
+  }  
 }
 
 class RadioButtons extends UIElement {
@@ -294,11 +326,7 @@ class RadioButtons extends UIElement {
     boolean onePressed = false;
     for (Toggle t : toggles) onePressed = onePressed||t.pressed;
     if (!onePressed && toggles.length>0) toggles[0].pressed=true;
-    updateOperation.execute();
-  }
-
-  void setUpdateOperation(UpdateOperation updateOperation) {
-    this.updateOperation = updateOperation;
+    if (updateOperation!=null) updateOperation.execute();
   }
 
   void setLabels(String[] labels) {
@@ -337,9 +365,6 @@ class Toggle extends UIElement {
     if (isDragged) isDragged = false;
   }
 
-  void setUpdateOperation(UpdateOperation updateOperation) {
-    this.updateOperation = updateOperation;
-  }
 }
 
 class Button extends UIElement {
@@ -370,9 +395,6 @@ class Button extends UIElement {
     if (isDragged) isDragged = false;
   }
 
-  void setUpdateOperation(UpdateOperation updateOperation) {
-    this.updateOperation = updateOperation;
-  }
 }
 
 class Slider extends UIElement {
@@ -420,10 +442,13 @@ class Slider extends UIElement {
     if (vertical) UIRectangle(0, h-(value*h)-4, w, 8, false, isDragged);
     else UIRectangle(value*w-4, 0, 8, h, false, isDragged);
 
+    String label = name+" "+round(scaledValue*100.0f)/100.0f;
+    if (labelOperation!=null) label = labelOperation.getLabel(); 
+
     fill(0x50);
     if (showLabel) {
-      if (vertical) text(name+" "+round(scaledValue*100.0f)/100.0f, 0, h+14);
-      else text(name+" "+round(scaledValue*100.0f)/100.0f, w+5, h-5);
+      if (vertical) text(label, 0, h+14);
+      else text(label, w+5, h-5);
     }
 
     popMatrix();
@@ -448,10 +473,6 @@ class Slider extends UIElement {
     }
   }
 
-  void setUpdateOperation(UpdateOperation updateOperation) {
-    this.updateOperation = updateOperation;
-  }
-
   void mouseReleased(float x, float y) {
     isDragged = false;
   }
@@ -459,6 +480,10 @@ class Slider extends UIElement {
 
 public interface UpdateOperation {
   void execute();
+}
+
+public interface LabelOperation {
+  String getLabel();
 }
 
 class Tooltip extends UIElement {

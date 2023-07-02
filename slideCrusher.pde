@@ -1,3 +1,4 @@
+
 import drop.*;
 
 import java.io.*;
@@ -10,13 +11,15 @@ import ddf.minim.*;
 
 // invert some sliders ?
 // notify when exported
-// actual UI values, display max sample time as Hz
-// preview left or right
 // gray out ununsed UI elements
 // destroy selected sample if no sample left
+// todos in the code
+// remove process button, play output = process if necessary then play, same for export
+// zero-crossing threshold = add more intermediary points or skip points
 
 // parameters
 ParameterSet previewSet = new ParameterSet();
+int displayChannel = 0;
 
 float previewOffset;
 float previewGain;
@@ -59,7 +62,7 @@ void dropEvent(DropEvent theDropEvent) {
 void updateDisplay() {
   if (selectedSlot!=null) {
     if (selectedSlot.nSample!=null) {
-      for (int i=0; i < displaySine.length; i++) displaySine[i] = selectedSlot.nSample[0][floor(constrain(((float)selectedSlot.nSample[0].length-displaySine.length)*previewOffset, 0, selectedSlot.nSample[0].length-displaySine.length)+i)];
+      for (int i=0; i < displaySine.length; i++) displaySine[i] = selectedSlot.nSample[displayChannel%selectedSlot.nSample.length][floor(constrain(((float)selectedSlot.nSample[displayChannel%selectedSlot.nSample.length].length-displaySine.length)*previewOffset, 0, selectedSlot.nSample[displayChannel%selectedSlot.nSample.length].length-displaySine.length)+i)];
     }
   }
   ProcessResult computation = computeInterp(displaySine, null, previewSet);
