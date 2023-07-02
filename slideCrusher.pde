@@ -9,13 +9,9 @@ import java.util.Random;
 
 import ddf.minim.*;
 
-// invert some sliders ?
-// notify when exported
-// gray out ununsed UI elements
-// destroy selected sample if no sample left
 // todos in the code
-// remove process button, play output = process if necessary then play, same for export
-// zero-crossing threshold = add more intermediary points or skip points
+// zero-crossing mult/div is ugly, make it better
+// notify when exported
 
 // parameters
 ParameterSet previewSet = new ParameterSet();
@@ -39,11 +35,14 @@ SDrop drop;
 Minim minim;
 AudioSample sample;
 
+boolean pendingPlayCurrentSlot = false;
+boolean pendingExportCurrentSlot = false;
+
 void setup() {
   size(800, 700);
   drop = new SDrop(this);
   minim = new Minim(this);
-  for (int i=0; i<displaySine.length; i++) displaySine[i] = sin(pow((float)(i+175)/100, 2))*(1-(float)i/displaySine.length);
+  computeDefaultPreviewWaveform();
   setBasicUIElements();
   updateDisplay();
 }
@@ -57,6 +56,10 @@ void dropEvent(DropEvent theDropEvent) {
     sampleSlots.add(selectedSlot);
     updateDisplay();
   }
+}
+
+void computeDefaultPreviewWaveform() {
+  for (int i=0; i<displaySine.length; i++) displaySine[i] = sin(pow((float)(i+175)/100, 2))*(1-(float)i/displaySine.length);
 }
 
 void updateDisplay() {
@@ -95,6 +98,8 @@ class ProcessRunner extends Thread {
       slot.nSampleProcessed[c] = computeInterp(slot.nSample[c], slot, slot.parameterSet).nSampleProcessed;
     }
     slot.isProcessing = false;
+    if (pendingPlayCurrentSlot) playCurrentSlot();
+    if (pendingExportCurrentSlot) selectedSlot.exportSample();
   }
 }
 
@@ -210,6 +215,10 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
   for (int i = 0; i < waveIn.length; i++) waveInComp[i] = Math.tanh(waveIn[i]*pSet.compressionFactor);
   double[] waveOut = new double[waveIn.length];
   double previousSample = 0;
+  int zeroesToSkip = constrain(floor(map(pSet.totalDifferenceThreshold, 3, 50, 0, 10)), 0, 10);
+  int zeroesToSplit = constrain(floor(map(pSet.totalDifferenceThreshold, 0.001, 0, 1, 10)), 1, 10);
+  int zeroesSplitted = 0;
+  int zeroesCrossed = 0;
   for (int i = 0; i < waveOut.length; ) {
     previousSample = waveOut[max(0, i-1)];
     if (slot!=null) slot.updateProgressSample((float)i/waveOut.length);
@@ -265,13 +274,24 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
       }
     }
     if (pSet.optimizationMethod==3) {
+      double previousZeroCrossed = sampleStart;
       for (int j = i+1; j < i+maxSlideTimeSmp; j++) {
         slideTimeSmp = floor((float)j-i);
         sampleEnd = waveInComp[j];
-        if (((sampleStart>0)^(sampleEnd>0)) && slideTimeSmp > 1) {
-          slideTimeSmp -= 1;
-          sampleEnd = waveInComp[i+slideTimeSmp];
-          break;
+        if (((previousZeroCrossed>0)^(sampleEnd>0))&&slideTimeSmp>=1) {
+          if (zeroesCrossed >= zeroesToSkip) {
+            zeroesCrossed = 0;
+            if (zeroesSplitted<zeroesToSplit) {
+              slideTimeSmp = ceil((float)slideTimeSmp/(zeroesToSplit-zeroesSplitted));
+              zeroesSplitted++;
+            }
+            if (zeroesSplitted>=zeroesToSplit) zeroesSplitted = 0;
+            sampleEnd = waveInComp[i+slideTimeSmp];
+            break;
+          } else {
+            zeroesCrossed++;
+            previousZeroCrossed = sampleEnd;
+          }
         }
       }
     }
@@ -459,6 +479,7 @@ class SampleSlot {
         e.printStackTrace();
       }
     }
+    pendingExportCurrentSlot = false;
   }
   void updateProgressSample(float f) {
     progressSample = f;
@@ -502,7 +523,7 @@ class SampleSlot {
     }
     return preview;
   }
-  boolean processedSampleAvailable()  {
+  boolean processedSampleAvailable() {
     return !isProcessing&&nSampleProcessed!=null;
   }
   void normalizeDisplay() {
@@ -531,8 +552,12 @@ class SampleSlot {
   }
   void mousePressed(float mX, float mY) {
     if (mX>x&&mY>y&&mX<x+w&&mY<y+h) {
-      selectedSlot = this;
-      updateDisplay();
+      if (selectedSlot != this) {
+        pendingPlayCurrentSlot = false;
+        pendingExportCurrentSlot = false;
+        selectedSlot = this;
+        updateDisplay();
+      }
     }
   }
   void mouseReleased(float mX, float mY) {
@@ -565,4 +590,11 @@ class ParameterSet {
     copy.optimizationMethod = this.optimizationMethod;
     return copy;
   }
+}
+
+void playCurrentSlot() {
+  if (selectedSlot.nbChannels == 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0), selectedSlot.format);
+  if (selectedSlot.nbChannels > 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0), selectedSlot.getProcessedSampleForPlayback(1), selectedSlot.format);
+  sample.trigger();
+  pendingPlayCurrentSlot = false;
 }
