@@ -83,7 +83,7 @@ void setBasicUIElements() {
   uiElements.add(radioOptimizationMethod);
 
   // totalDifferenceThreshold
-  Slider sliderTotalDifferenceThreshold = new Slider("threshold", 410, 440, 200, 20, 0.7, false, 0);
+  Slider sliderTotalDifferenceThreshold = new Slider("threshold", 410, 440, 200, 20, 0.3, false, 0);
   UpdateOperation sliderTotalDifferenceThresholdOperation = new UpdateOperation() {
     @Override
       public void execute() {

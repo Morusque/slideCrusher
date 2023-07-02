@@ -352,7 +352,7 @@ class ProcessResult {
   boolean[] landmarks;
 }
 
-class SampleSlot {
+class SampleSlot extends UIElement {
   String url="";
   float processBar;
   int nbChannels;
@@ -368,12 +368,8 @@ class SampleSlot {
   int progressCurrentChannel = 0;
   float progressSample = 0;
   ParameterSet parameterSet;
-  float x, y;
-  float w = 350;
-  float h = 40;
   SampleSlot(float x, float y) {
-    this.x=x;
-    this.y=y;
+    super("slot",x,y,350,40);
   }
   void loadFile() {
     try {
@@ -566,8 +562,8 @@ class SampleSlot {
       }
     }
   }
-  void mouseReleased(float mX, float mY) {
-  }
+  void mouseDragged(float x, float y) {};
+  void mouseReleased(float x, float y) {};  
 }
 
 UIElement getUiElementCalled(String name) {
