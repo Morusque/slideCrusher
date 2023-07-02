@@ -33,6 +33,9 @@ AudioSample sample;
 
 boolean pendingPlayCurrentSlot = false;
 boolean pendingExportCurrentSlot = false;
+boolean needsReprocessing = true;
+
+color[] UIColors = new color[]{0x00, 0x80, 0xDF, 0xE0, 0xFF, 0xC0, 0x50, 0x20, color(0xFF, 0xFF, 0x00)}; // black, border dark, border light, border lighter, white, background, highlighted background, soft text, processing
 
 void setup() {
   size(800, 700);
@@ -51,6 +54,12 @@ void dropEvent(DropEvent theDropEvent) {
     selectedSlot.normalizeDisplay();
     sampleSlots.add(selectedSlot);
     updateDisplay();
+    getUiElementCalled("displayChannel").show=true;
+    getUiElementCalled("process").show=true;
+    getUiElementCalled("play input").show=true;
+    getUiElementCalled("play output").show=true;
+    getUiElementCalled("export").show=true;
+    getUiElementCalled("remove").show=true;
   }
 }
 
@@ -72,6 +81,7 @@ void updateDisplay() {
 void processCurrentSlot() {
   if (selectedSlot!=null && !selectedSlot.isProcessing) {
     selectedSlot.process();
+    needsReprocessing = false;
   }
 }
 
@@ -100,27 +110,27 @@ class ProcessRunner extends Thread {
 }
 
 void draw() {
-  background(0xC0);
+  background(UIColors[5]);
   noFill();
-  stroke(0xDF);
+  stroke(UIColors[2]);
   line(0, 0, width, 0);
   line(0, 0, 0, height);
-  stroke(0x00);
+  stroke(UIColors[0]);
   line(0, height-1, width-1, height-1);
   line(width-1, 0, width-1, height-1);
-  stroke(0xFF);
+  stroke(UIColors[4]);
   line(1, 1, width-2, 1);
   line(1, 1, 1, height-2);
-  stroke(0x80);
+  stroke(UIColors[1]);
   line(1, height-2, width-2, height-2);
   line(width-2, 1, width-2, height-2);
-  fill(0x20);
+  fill(UIColors[7]);
 
   noFill();
   pushMatrix();
   translate(30, 10);
   noStroke();
-  fill(0xFF);
+  fill(UIColors[4]);
   rect(0, 0, displaySine.length, 300);
 
   stroke(0xF0);
@@ -490,11 +500,11 @@ class SampleSlot {
     UIRectangle(0, 0, w, h, this==selectedSlot, this==selectedSlot);
     noStroke();
     if (isProcessing) {
-      fill(0xFF, 0xFF, 0);
+      fill(UIColors[8]);
       rect(2, 2, progress*(w-4), (h-4));
     }
 
-    fill(0x20);
+    fill(UIColors[7]);
     String urlCropped = url.substring(0);
     if (urlCropped.length()>40) urlCropped = "..."+url.substring(max(url.length()-40, 0), url.length());
     text(urlCropped, 10, 10, w-20, h-20);
@@ -551,6 +561,7 @@ class SampleSlot {
         pendingPlayCurrentSlot = false;
         pendingExportCurrentSlot = false;
         selectedSlot = this;
+        needsReprocessing = true;
         updateDisplay();
       }
     }
@@ -592,8 +603,13 @@ class ParameterSet {
 }
 
 void playCurrentSlot() {
-  if (selectedSlot.nbChannels == 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0), selectedSlot.format);
-  if (selectedSlot.nbChannels > 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0), selectedSlot.getProcessedSampleForPlayback(1), selectedSlot.format);
-  sample.trigger();
+  try {
+    if (selectedSlot.nbChannels == 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0), selectedSlot.format);
+    if (selectedSlot.nbChannels > 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0), selectedSlot.getProcessedSampleForPlayback(1), selectedSlot.format);
+    sample.trigger();
+  }
+  catch(Exception e) {
+    println(e);
+  }
   pendingPlayCurrentSlot = false;
 }
