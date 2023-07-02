@@ -54,7 +54,6 @@ void setBasicUIElements() {
       public String getLabel() {
       float samplingFr = 44100;
       if (selectedSlot!=null) if (selectedSlot.format!=null)  samplingFr = selectedSlot.format.getSampleRate();
-      // TODO update it only when necessary
       float value = samplingFr/sliderDefaultMaxSlideTimeSmp.scaledValue;
       value = round(value*100.0f)/100.0f;
       return value + " Hz";
@@ -88,6 +87,8 @@ void setBasicUIElements() {
       public void execute() {
       sliderTotalDifferenceThreshold.scaledValue = sliderTotalDifferenceThreshold.value;
       previewSet.totalDifferenceThreshold = map(pow(1.0-sliderTotalDifferenceThreshold.scaledValue, 10), 0, 1, 0.00001, 50.0);
+      previewSet.zeroesToSkip = constrain(floor(map(sliderTotalDifferenceThreshold.scaledValue, 0.5, 1, 0, 10)), 0, 10);
+      previewSet.zeroesToSplit = constrain(floor(map(sliderTotalDifferenceThreshold.scaledValue, 0.5, 0, 0, 10)), 1, 10);
       updateDisplay();
     }
   };

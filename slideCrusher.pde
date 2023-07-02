@@ -9,10 +9,6 @@ import java.util.Random;
 
 import ddf.minim.*;
 
-// todos in the code
-// zero-crossing mult/div is ugly, make it better
-// notify when exported
-
 // parameters
 ParameterSet previewSet = new ParameterSet();
 int displayChannel = 0;
@@ -215,8 +211,6 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
   for (int i = 0; i < waveIn.length; i++) waveInComp[i] = Math.tanh(waveIn[i]*pSet.compressionFactor);
   double[] waveOut = new double[waveIn.length];
   double previousSample = 0;
-  int zeroesToSkip = constrain(floor(map(pSet.totalDifferenceThreshold, 3, 50, 0, 10)), 0, 10);
-  int zeroesToSplit = constrain(floor(map(pSet.totalDifferenceThreshold, 0.001, 0, 1, 10)), 1, 10);
   int zeroesSplitted = 0;
   int zeroesCrossed = 0;
   for (int i = 0; i < waveOut.length; ) {
@@ -275,17 +269,18 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
     }
     if (pSet.optimizationMethod==3) {
       double previousZeroCrossed = sampleStart;
-      for (int j = i+1; j < i+maxSlideTimeSmp; j++) {
+      for (int j = i+1; j < ((pSet.zeroesToSplit>1)?waveIn.length:i+maxSlideTimeSmp); j++) {
         slideTimeSmp = floor((float)j-i);
         sampleEnd = waveInComp[j];
         if (((previousZeroCrossed>0)^(sampleEnd>0))&&slideTimeSmp>=1) {
-          if (zeroesCrossed >= zeroesToSkip) {
+          if (zeroesCrossed >= pSet.zeroesToSkip) {
             zeroesCrossed = 0;
-            if (zeroesSplitted<zeroesToSplit) {
-              slideTimeSmp = ceil((float)slideTimeSmp/(zeroesToSplit-zeroesSplitted));
+            if (zeroesSplitted<pSet.zeroesToSplit) {
+              slideTimeSmp = ceil((float)slideTimeSmp/(pSet.zeroesToSplit-zeroesSplitted));
               zeroesSplitted++;
             }
-            if (zeroesSplitted>=zeroesToSplit) zeroesSplitted = 0;
+            if (zeroesSplitted>=pSet.zeroesToSplit) zeroesSplitted = 0;
+            if (pSet.zeroesToSplit>1) slideTimeSmp = min(slideTimeSmp, floor(maxSlideTimeSmp));
             sampleEnd = waveInComp[i+slideTimeSmp];
             break;
           } else {
@@ -295,7 +290,7 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
         }
       }
     }
-    sampleStart = atanh(sampleStart)/pSet.compressionFactor;// TODO why not just reading waveIn there ?
+    sampleStart = waveIn[i];
     sampleEnd   = atanh(sampleEnd)/pSet.compressionFactor;
     double sampleMin = 1;
     double sampleMax = -1;
@@ -573,6 +568,8 @@ UIElement getUiElementCalled(String name) {
 
 class ParameterSet {
   float totalDifferenceThreshold;
+  int zeroesToSkip;
+  int zeroesToSplit;
   float compressionFactor;
   float defaultMaxSlideTimeSmp;
   int interpolationType;// 0 = rectangular, 1 = linear, 2 = sCurve, 3 = sawtooth, 4 = boxcar; 5 = zero
@@ -582,6 +579,8 @@ class ParameterSet {
   ParameterSet copy() {
     ParameterSet copy = new ParameterSet();
     copy.totalDifferenceThreshold = this.totalDifferenceThreshold;
+    copy.zeroesToSkip = this.zeroesToSkip;
+    copy.zeroesToSplit = this.zeroesToSplit;
     copy.compressionFactor = this.compressionFactor;
     copy.defaultMaxSlideTimeSmp = this.defaultMaxSlideTimeSmp;
     copy.interpolationType = this.interpolationType;
