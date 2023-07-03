@@ -448,7 +448,6 @@ class Button extends UIElement {
       translate(x, y);
       fill(UIColors[7]);
       if (showLabel) text(getLabel(), 6, h-6);
-      println(getLabel());
       popMatrix();
     }
   }
