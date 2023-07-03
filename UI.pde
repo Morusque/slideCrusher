@@ -142,7 +142,7 @@ void setBasicUIElements() {
       if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
   };
-  sliderSinusAddition.setTooltip(tooltip, "adds one arbitrary sinewave between each sampling points, amplitude of the sines follows sound amplitude");
+  sliderSinusAddition.setTooltip(tooltip, "add one arbitrary sinewave between each sampling point and the next, amplitude of the sines follows sound amplitude");
   uiElements.add(sliderSinusAddition);
 
   // IIR filter
@@ -156,7 +156,7 @@ void setBasicUIElements() {
       if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
   };
-  sliderIIRFilter.setTooltip(tooltip, "applies an IIR filter in the process");
+  sliderIIRFilter.setTooltip(tooltip, "applie an IIR filter in the process");
   uiElements.add(sliderIIRFilter);
 
   Button processButton = new Button("process", 10, 610, 100, 20);
