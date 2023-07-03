@@ -10,7 +10,7 @@ void setBasicUIElements() {
 
   // previewOffset
   Slider sliderPreviewOffset = new Slider("previewOffset", 30, 311, 800-50, 20, 0.5, false, 0);
-  UpdateOperation sliderPreviewOffsetOperation = new UpdateOperation() {
+  sliderPreviewOffset.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
       sliderPreviewOffset.scaledValue = sliderPreviewOffset.value;
@@ -18,14 +18,13 @@ void setBasicUIElements() {
       updateDisplay();
     }
   };
-  sliderPreviewOffset.setUpdateOperation(sliderPreviewOffsetOperation);
   sliderPreviewOffset.setTooltip(tooltip, "preview offset");
   sliderPreviewOffset.showLabel = false;
   uiElements.add(sliderPreviewOffset);
 
   // previewGain
   Slider sliderPreviewGain = new Slider("previewGain", 10, 10, 20, 300, 0.03, true, 0);
-  UpdateOperation sliderPreviewGainOperation = new UpdateOperation() {
+  sliderPreviewGain.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
       sliderPreviewGain.scaledValue = sliderPreviewGain.value*30;
@@ -33,23 +32,21 @@ void setBasicUIElements() {
       updateDisplay();
     }
   };
-  sliderPreviewGain.setUpdateOperation(sliderPreviewGainOperation);
   sliderPreviewGain.setTooltip(tooltip, "preview gain");
   sliderPreviewGain.showLabel = false;
   uiElements.add(sliderPreviewGain);
 
   // defaultMaxSlideTimeSmp
   Slider sliderDefaultMaxSlideTimeSmp = new Slider("frequency", 410, 370, 200, 20, 0.5, false, 0);
-  UpdateOperation sliderDefaultMaxSlideTimeSmpOperation = new UpdateOperation() {
+  sliderDefaultMaxSlideTimeSmp.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
       sliderDefaultMaxSlideTimeSmp.scaledValue = floor(map(pow(1-sliderDefaultMaxSlideTimeSmp.value, 5), 0, 1, 1, 5000));
       previewSet.defaultMaxSlideTimeSmp = sliderDefaultMaxSlideTimeSmp.scaledValue;
       updateDisplay();
-      needsReprocessing = true;
+      if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
   };
-  sliderDefaultMaxSlideTimeSmp.setUpdateOperation(sliderDefaultMaxSlideTimeSmpOperation);
   LabelOperation sliderDefaultMaxSlideTimeSmpLabel = new LabelOperation() {
     @Override
       public String getLabel() {
@@ -76,7 +73,7 @@ void setBasicUIElements() {
       if (previewSet.optimizationMethod == 2) radioOptimizationMethod.description = "how to optimize the sampling time \r\ncurrent type : \r\nadd more sampling points to make sure the difference between consecutive sampled points doesn't exeed the threshold";
       if (previewSet.optimizationMethod == 3) radioOptimizationMethod.description = "how to optimize the sampling time \r\ncurrent type : \r\nadd sampling points when crossing zero, use threshold to skip zeroes";
       updateDisplay();
-      needsReprocessing = true;
+      if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
   };
   radioOptimizationMethod.setTooltip(tooltip, "how to optimize the sampling time");
@@ -84,7 +81,7 @@ void setBasicUIElements() {
 
   // totalDifferenceThreshold
   Slider sliderTotalDifferenceThreshold = new Slider("threshold", 410, 440, 200, 20, 0.3, false, 0);
-  UpdateOperation sliderTotalDifferenceThresholdOperation = new UpdateOperation() {
+  sliderTotalDifferenceThreshold.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
       sliderTotalDifferenceThreshold.scaledValue = sliderTotalDifferenceThreshold.value;
@@ -92,25 +89,23 @@ void setBasicUIElements() {
       previewSet.zeroesToSkip = constrain(floor(map(sliderTotalDifferenceThreshold.scaledValue, 0.5, 1, 0, 10)), 0, 10);
       previewSet.zeroesToSplit = constrain(floor(map(sliderTotalDifferenceThreshold.scaledValue, 0.5, 0, 0, 10)), 1, 10);
       updateDisplay();
-      needsReprocessing = true;
+      if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
   };
-  sliderTotalDifferenceThreshold.setUpdateOperation(sliderTotalDifferenceThresholdOperation);
   sliderTotalDifferenceThreshold.setTooltip(tooltip, "threshold used by the optimization process");
   uiElements.add(sliderTotalDifferenceThreshold);
 
   // compressionFactor
   Slider sliderCompressionFactor = new Slider("compression", 410, 470, 200, 20, 0.5, false, 0);
-  UpdateOperation sliderCompressionFactorOperation = new UpdateOperation() {
+  sliderCompressionFactor.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
       sliderCompressionFactor.scaledValue = sliderCompressionFactor.value;
       previewSet.compressionFactor = map(pow(sliderCompressionFactor.scaledValue, 1.5), 0, 1, 0.1, 5);
       updateDisplay();
-      needsReprocessing = true;
+      if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
   };
-  sliderCompressionFactor.setUpdateOperation(sliderCompressionFactorOperation);
   sliderCompressionFactor.setTooltip(tooltip, "temporarily compress the sample during optimization \r\nlower values generate more distortion and gating \r\nhigher values keep precision on quiter parts of the audio");
   uiElements.add(sliderCompressionFactor);
 
@@ -128,7 +123,7 @@ void setBasicUIElements() {
       if (previewSet.interpolationType == 4) radioInterpolationType.description = "current interpolation type : \r\nboxcar";
       if (previewSet.interpolationType == 5) radioInterpolationType.description = "current interpolation type : \r\nzero";
       updateDisplay();
-      needsReprocessing = true;
+      if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
   };
   radioInterpolationType.setTooltip(tooltip, "interpolation type");
@@ -136,7 +131,7 @@ void setBasicUIElements() {
 
   // sinusAddition
   Slider sliderSinusAddition = new Slider("sinus", 410, 540, 200, 20, 0.5, false, 0);
-  UpdateOperation sliderSinusAdditionOperation = new UpdateOperation() {
+  sliderSinusAddition.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
       sliderSinusAddition.scaledValue = map(sliderSinusAddition.value, 0, 1, -1, 1);
@@ -144,25 +139,23 @@ void setBasicUIElements() {
       else sliderSinusAddition.scaledValue = abs(pow(sliderSinusAddition.scaledValue, 4))*(sliderSinusAddition.scaledValue/abs(sliderSinusAddition.scaledValue));
       previewSet.sinusAddition = sliderSinusAddition.scaledValue;
       updateDisplay();
-      needsReprocessing = true;
+      if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
   };
-  sliderSinusAddition.setUpdateOperation(sliderSinusAdditionOperation);
   sliderSinusAddition.setTooltip(tooltip, "adds one arbitrary sinewave between each sampling points, amplitude of the sines follows sound amplitude");
   uiElements.add(sliderSinusAddition);
 
   // IIR filter
   Slider sliderIIRFilter = new Slider("filter", 410, 570, 200, 20, 0.0, false, 0);
-  UpdateOperation sliderIIRFilterOperation = new UpdateOperation() {
+  sliderIIRFilter.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
       sliderIIRFilter.scaledValue = sliderIIRFilter.value;
       previewSet.iirFilter = sliderIIRFilter.scaledValue;
       updateDisplay();
-      needsReprocessing = true;
+      if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
   };
-  sliderIIRFilter.setUpdateOperation(sliderIIRFilterOperation);
   sliderIIRFilter.setTooltip(tooltip, "applies an IIR filter in the process");
   uiElements.add(sliderIIRFilter);
 
@@ -176,6 +169,60 @@ void setBasicUIElements() {
   };
   processButton.setTooltip(tooltip, "process selected sample");
   uiElements.add(processButton);
+
+  Button exportCurrentSlot = new Button("export", 10, 630, 100, 20);
+  exportCurrentSlot.show = false;
+  exportCurrentSlot.updateOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      if (selectedSlot!=null) {
+        if (!selectedSlot.isProcessing) {
+          if (selectedSlot.nSampleProcessed!=null&&!selectedSlot.needsReprocessing) {
+            selectedSlot.exportSample();
+          } else {
+            pendingExportCurrentSlot=true;
+            processCurrentSlot();
+          }
+        }
+      }
+    }
+  };
+  exportCurrentSlot.labelOperation = new LabelOperation() {
+    @Override
+      public String getLabel() {
+      if (selectedSlot.needsReprocessing) return "(export)";
+      return "export";
+    }
+  };  
+  exportCurrentSlot.setTooltip(tooltip, "export current slot (at same location with a _processed suffix)");
+  uiElements.add(exportCurrentSlot);
+
+  Button removeCurrentSlot = new Button("remove", 10, 650, 100, 20);
+  removeCurrentSlot.show = false;
+  removeCurrentSlot.updateOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      if (selectedSlot!=null) {
+        sampleSlots.remove(selectedSlot);
+        for (int i=0; i<sampleSlots.size(); i++) sampleSlots.get(i).y=350+i*50;
+        if (sampleSlots.size()>0) selectedSlot = sampleSlots.get(0);
+        else {
+          selectedSlot = null;
+          getUiElementCalled("displayChannel").show=false;
+          getUiElementCalled("process").show=false;
+          getUiElementCalled("play input").show=false;
+          getUiElementCalled("play output").show=false;
+          getUiElementCalled("stop").show=false;
+          getUiElementCalled("export").show=false;
+          getUiElementCalled("remove").show=false;
+          computeDefaultPreviewWaveform();
+        }
+        updateDisplay();
+      }
+    }
+  };
+  removeCurrentSlot.setTooltip(tooltip, "remove selected slot");
+  uiElements.add(removeCurrentSlot);
 
   Button playCurrentSlot = new Button("play input", 150, 610, 100, 20);
   playCurrentSlot.show = false;
@@ -206,7 +253,7 @@ void setBasicUIElements() {
         sample.close();
       }
       if (selectedSlot!=null) {
-        if (selectedSlot.processedSampleAvailable()&&!needsReprocessing) {
+        if (selectedSlot.processedSampleAvailable()&&!selectedSlot.needsReprocessing) {
           playCurrentSlot();
         } else {
           pendingPlayCurrentSlot = true;
@@ -215,54 +262,29 @@ void setBasicUIElements() {
       }
     }
   };
+  playCurrentSlotOut.labelOperation = new LabelOperation() {
+    @Override
+      public String getLabel() {
+      if (selectedSlot.needsReprocessing) return "(play output)";
+      return "play output";
+    }
+  };
   playCurrentSlotOut.setTooltip(tooltip, "play selected sample (processed)");
   uiElements.add(playCurrentSlotOut);
 
-  Button exportCurrentSlot = new Button("export", 10, 630, 100, 20);
-  exportCurrentSlot.show = false;
-  exportCurrentSlot.updateOperation = new UpdateOperation() {
+  Button stopAudio = new Button("stop", 150, 650, 100, 20);
+  stopAudio.show = false;
+  stopAudio.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
-      if (selectedSlot!=null) {
-        if (!selectedSlot.isProcessing) {
-          if (selectedSlot.nSampleProcessed!=null&&!needsReprocessing) {
-            selectedSlot.exportSample();
-          } else {
-            pendingExportCurrentSlot=true;
-            processCurrentSlot();
-          }
-        }
+      if (sample!=null) {
+        sample.stop();
+        sample.close();
       }
     }
   };
-  exportCurrentSlot.setTooltip(tooltip, "export current slot (at same location with a _processed suffix)");
-  uiElements.add(exportCurrentSlot);
-
-  Button removeCurrentSlot = new Button("remove", 10, 650, 100, 20);
-  removeCurrentSlot.show = false;
-  removeCurrentSlot.updateOperation = new UpdateOperation() {
-    @Override
-      public void execute() {
-      if (selectedSlot!=null) {
-        sampleSlots.remove(selectedSlot);
-        for (int i=0; i<sampleSlots.size(); i++) sampleSlots.get(i).y=350+i*50;
-        if (sampleSlots.size()>0) selectedSlot = sampleSlots.get(0);
-        else {
-          selectedSlot = null;
-          getUiElementCalled("displayChannel").show=false;
-          getUiElementCalled("process").show=false;
-          getUiElementCalled("play input").show=false;
-          getUiElementCalled("play output").show=false;
-          getUiElementCalled("export").show=false;
-          getUiElementCalled("remove").show=false;
-          computeDefaultPreviewWaveform();
-        }
-        updateDisplay();
-      }
-    }
-  };
-  removeCurrentSlot.setTooltip(tooltip, "remove selected slot");
-  uiElements.add(removeCurrentSlot);
+  stopAudio.setTooltip(tooltip, "stop audio");
+  uiElements.add(stopAudio);
 
   RadioButtons displayChannelRadio = new RadioButtons("displayChannel", 620, 20, 150, 20, 0, 2);
   displayChannelRadio.showLabel = false;
@@ -281,7 +303,7 @@ void setBasicUIElements() {
   for (UIElement e : uiElements) if (e.updateOperation!=null) e.updateOperation.execute();
 }
 
-// A class representing a UI Button.
+// A class representing a UI element
 abstract class UIElement {
   float x, y, w, h;
   String name;
@@ -386,7 +408,7 @@ class Toggle extends UIElement {
       pushMatrix();
       translate(x, y);
       fill(UIColors[7]);
-      if (showLabel) text(name, 6, h-6);
+      if (showLabel) text(getLabel(), 6, h-6);
       popMatrix();
     }
   }
@@ -407,6 +429,10 @@ class Toggle extends UIElement {
     }
     if (isDragged) isDragged = false;
   }
+  String getLabel() {
+    if (labelOperation!=null) labelOperation.getLabel();
+    return name;
+  }
 }
 
 class Button extends UIElement {
@@ -421,7 +447,8 @@ class Button extends UIElement {
       pushMatrix();
       translate(x, y);
       fill(UIColors[7]);
-      if (showLabel) text(name, 6, h-6);
+      if (showLabel) text(getLabel(), 6, h-6);
+      println(getLabel());
       popMatrix();
     }
   }
@@ -440,6 +467,11 @@ class Button extends UIElement {
       if (updateOperation!=null) updateOperation.execute();
     }
     if (isDragged) isDragged = false;
+  }
+
+  String getLabel() {
+    if (labelOperation!=null) return labelOperation.getLabel();
+    return name;
   }
 }
 
@@ -604,4 +636,25 @@ void UIRectangle(float x, float y, float w, float h, boolean pushed, boolean hig
   line(1, h-2, w-2, h-2);
   line(w-2, 1, w-2, h-2);
   popMatrix();
+}
+
+UIElement getUiElementCalled(String name) {
+  for (UIElement e : uiElements) {
+    if (e.name.equals(name)) return e;
+  }
+  return null;
+}
+
+void mousePressed() {
+  for (UIElement e : uiElements) e.mousePressed(mouseX, mouseY);
+  for (SampleSlot s : sampleSlots) s.mousePressed(mouseX, mouseY);
+}
+
+void mouseDragged() {
+  for (UIElement e : uiElements) e.mouseDragged(mouseX, mouseY);
+}
+
+void mouseReleased() {
+  for (UIElement e : uiElements) e.mouseReleased(mouseX, mouseY);
+  for (SampleSlot s : sampleSlots) s.mouseReleased(mouseX, mouseY);
 }
