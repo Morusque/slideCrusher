@@ -181,6 +181,9 @@ class ParameterSet {
   float sinusAddition;
   float iirFilter;
   int optimizationMethod;// 0 = fixed, 1 = integral, 2 = difference, 3 = zero-crossing
+  int processStart;
+  int processEnd;
+  int target;// 0 = processed, 1 = short
   ParameterSet copy() {
     ParameterSet copy = new ParameterSet();
     copy.totalDifferenceThreshold = this.totalDifferenceThreshold;
@@ -192,6 +195,9 @@ class ParameterSet {
     copy.sinusAddition = this.sinusAddition;
     copy.iirFilter = this.iirFilter;
     copy.optimizationMethod = this.optimizationMethod;
+    copy.processStart = this.processStart;
+    copy.processEnd = this.processEnd;
+    copy.target = this.target;
     return copy;
   }
 }

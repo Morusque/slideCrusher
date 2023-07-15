@@ -5,6 +5,7 @@ class SampleSlot extends UIElement {
   int nbChannels;
   double[][] nSample;
   double[][] nSampleProcessed;
+  double[][] nSampleProcessedShort;
   float maxSampleValue;
   int audioDataLength;
   boolean isBigEndian;
@@ -17,7 +18,7 @@ class SampleSlot extends UIElement {
   ParameterSet parameterSet;
   boolean needsReprocessing = true;
   SampleSlot(float x, float y) {
-    super("slot",x,y,350,40);
+    super("slot", x, y, 350, 40);
   }
   void loadFile() {
     try {
@@ -156,6 +157,14 @@ class SampleSlot extends UIElement {
   }
   void process() {
     parameterSet = previewSet.copy();
+    parameterSet.processStart = 0;
+    parameterSet.processEnd = nSample[0].length;
+    parameterSet.target = 0;
+    new ProcessRunner(this).start();
+  }
+  void processShort() {
+    parameterSet = previewSet.copy();
+    parameterSet.target = 1;
     new ProcessRunner(this).start();
   }
   float[] getOriginalSampleForPlayback(int channel) {
@@ -163,17 +172,28 @@ class SampleSlot extends UIElement {
     for (int i=0; i<preview.length; i++) preview[i] = (float)nSample[channel][i];
     return preview;
   }
-  float[] getProcessedSampleForPlayback(int channel) {
+  float[] getProcessedSampleForPlayback(int channel, boolean shortSample) {
     float[] preview = null;
-    if (processedSampleAvailable()) {
-      preview = new float[nSampleProcessed[channel].length];
-      for (int i=0; i<preview.length; i++) preview[i] = (float)nSampleProcessed[channel][i];
-      return preview;
+    if (shortSample) {
+      if (processedSampleShortAvailable()) {
+        preview = new float[nSampleProcessedShort[channel].length]; 
+        for (int i=0; i<preview.length; i++) preview[i] = (float)nSampleProcessedShort[channel][i];
+        return preview;
+      }      
+    } else {
+      if (processedSampleAvailable()) {
+        preview = new float[nSampleProcessed[channel].length];
+        for (int i=0; i<preview.length; i++) preview[i] = (float)nSampleProcessed[channel][i];
+        return preview;
+      }
     }
     return preview;
   }
   boolean processedSampleAvailable() {
     return !isProcessing&&nSampleProcessed!=null;
+  }
+  boolean processedSampleShortAvailable() {
+    return !isProcessing&&nSampleProcessedShort!=null;
   }
   void normalizeDisplay() {
     float loudest = 0;
@@ -209,6 +229,8 @@ class SampleSlot extends UIElement {
       }
     }
   }
-  void mouseDragged(float x, float y) {};
-  void mouseReleased(float x, float y) {};  
+  void mouseDragged(float x, float y) {
+  };
+  void mouseReleased(float x, float y) {
+  };
 }

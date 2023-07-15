@@ -15,6 +15,8 @@ void setBasicUIElements() {
       public void execute() {
       sliderPreviewOffset.scaledValue = sliderPreviewOffset.value;
       previewOffset = sliderPreviewOffset.scaledValue;
+      if (selectedSlot!=null) previewSet.processStart = floor(selectedSlot.nSample[0].length*previewOffset);
+      if (selectedSlot!=null) previewSet.processEnd = min(previewSet.processStart+50000,selectedSlot.nSample[0].length);
       updateDisplay();
     }
   };
@@ -193,7 +195,7 @@ void setBasicUIElements() {
       if (selectedSlot.needsReprocessing) return "(export)";
       return "export";
     }
-  };  
+  };
   exportCurrentSlot.setTooltip(tooltip, "export current slot (at same location with a _processed suffix)");
   uiElements.add(exportCurrentSlot);
 
@@ -212,6 +214,7 @@ void setBasicUIElements() {
           getUiElementCalled("process").show=false;
           getUiElementCalled("play input").show=false;
           getUiElementCalled("play output").show=false;
+          getUiElementCalled("short preview").show=false;
           getUiElementCalled("stop").show=false;
           getUiElementCalled("export").show=false;
           getUiElementCalled("remove").show=false;
@@ -254,7 +257,7 @@ void setBasicUIElements() {
       }
       if (selectedSlot!=null) {
         if (selectedSlot.processedSampleAvailable()&&!selectedSlot.needsReprocessing) {
-          playCurrentSlot();
+          playCurrentSlot(false);
         } else {
           pendingPlayCurrentSlot = true;
           processCurrentSlot();
@@ -269,8 +272,33 @@ void setBasicUIElements() {
       return "play output";
     }
   };
-  playCurrentSlotOut.setTooltip(tooltip, "play selected sample (processed)");
+  playCurrentSlotOut.setTooltip(tooltip, "play output");
   uiElements.add(playCurrentSlotOut);
+
+  Button playPreview = new Button("short preview", 250, 630, 100, 20);
+  playPreview.show = false;
+  playPreview.updateOperation = new UpdateOperation() {
+    @Override
+      public void execute() {
+      if (sample!=null) {
+        sample.stop();
+        sample.close();
+      }
+      if (selectedSlot!=null) {
+        pendingPlayCurrentSlotShort = true;
+        processCurrentSlotShort();
+      }
+    }
+  };
+  playPreview.labelOperation = new LabelOperation() {
+    @Override
+      public String getLabel() {
+      if (selectedSlot.needsReprocessing) return "(short preview)";
+      return "short preview";
+    }
+  };
+  playPreview.setTooltip(tooltip, "plays a short preview starting from the display offset point");
+  uiElements.add(playPreview);
 
   Button stopAudio = new Button("stop", 150, 650, 100, 20);
   stopAudio.show = false;

@@ -32,9 +32,10 @@ AudioSample sample;
 // flags for various actions
 boolean pendingPlayCurrentSlot = false;
 boolean pendingExportCurrentSlot = false;
+boolean pendingPlayCurrentSlotShort = false;
 
 // black, border dark, border light, border lighter, white, background, highlighted background, soft text, processing
-color[] UIColors = new color[]{0x00, 0x80, 0xDF, 0xE0, 0xFF, 0xC0, 0x50, 0x20, color(0xFF, 0xFF, 0x00)}; 
+color[] UIColors = new color[]{0x00, 0x80, 0xDF, 0xE0, 0xFF, 0xC0, 0x50, 0x20, color(0xFF, 0xFF, 0x00)};
 
 void setup() {
   size(800, 700);
@@ -58,6 +59,7 @@ void dropEvent(DropEvent theDropEvent) {
     getUiElementCalled("process").show=true;
     getUiElementCalled("play input").show=true;
     getUiElementCalled("play output").show=true;
+    getUiElementCalled("short preview").show=true;
     getUiElementCalled("stop").show=true;
     getUiElementCalled("export").show=true;
     getUiElementCalled("remove").show=true;
@@ -88,6 +90,13 @@ void processCurrentSlot() {
   }
 }
 
+// function to process a short chunck from the current sample slot
+void processCurrentSlotShort() {
+  if (selectedSlot!=null && !selectedSlot.isProcessing) {
+    selectedSlot.processShort();
+  }
+}
+
 // thread to run signal processing asynchronously
 class ProcessRunner extends Thread {
   SampleSlot slot;
@@ -101,21 +110,30 @@ class ProcessRunner extends Thread {
   void process() {
     slot.isProcessing = true;
     // process every channel
-    slot.nSampleProcessed = new double[slot.nbChannels][];
+    if (slot.parameterSet.target==0) slot.nSampleProcessed = new double[slot.nbChannels][];
+    if (slot.parameterSet.target==1) slot.nSampleProcessedShort = new double[slot.nbChannels][];
     for (int c = 0; c < slot.nbChannels; c++) {
       slot.updateProgressCurrentChannel(c);
       slot.updateProgressSample(0);
-      slot.nSampleProcessed[c] = computeInterp(slot.nSample[c], slot, slot.parameterSet).nSampleProcessed;
+      if (slot.parameterSet.target==0) {
+        slot.nSampleProcessed[c] = computeInterp(slot.nSample[c], slot, slot.parameterSet).nSampleProcessed;
+      }
+      if (slot.parameterSet.target==1) {
+        double[] cropped = new double[slot.parameterSet.processEnd-slot.parameterSet.processStart];
+        for (int i=0; i<cropped.length; i++) cropped[i] = slot.nSample[c][i+slot.parameterSet.processStart];
+        slot.nSampleProcessedShort[c] = computeInterp(cropped, slot, slot.parameterSet).nSampleProcessed;
+      }
     }
     slot.isProcessing = false;
-    slot.needsReprocessing = false;
-    if (pendingPlayCurrentSlot) playCurrentSlot();
+    if (slot.parameterSet.target==0) slot.needsReprocessing = false;
+    if (pendingPlayCurrentSlot) playCurrentSlot(false);
+    if (pendingPlayCurrentSlotShort) playCurrentSlot(true);
     if (pendingExportCurrentSlot) selectedSlot.exportSample();
   }
 }
 
 void draw() {
-  
+
   // draw background and general frame
   background(UIColors[5]);
   noFill();
@@ -179,7 +197,7 @@ void draw() {
     vertex(i, -constrain((float)displaySine[i]*previewGain, -1, 1)*displayMax);
   }
   endShape();
-  
+
   // draw the output waveform
   stroke(0, 0, 0xFF);
   strokeWeight(1);
@@ -214,14 +232,19 @@ void draw() {
   for (UIElement e : uiElements) e.draw();
 }
 
-void playCurrentSlot() {
+void playCurrentSlot(boolean shortSample) {
   try {
-    if (selectedSlot.nbChannels == 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0), selectedSlot.format);
-    if (selectedSlot.nbChannels > 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0), selectedSlot.getProcessedSampleForPlayback(1), selectedSlot.format);
+    if (sample!=null) {
+      sample.stop();
+      sample.close();
+    }
+    if (selectedSlot.nbChannels == 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0, shortSample), selectedSlot.format);
+    if (selectedSlot.nbChannels > 1) sample = minim.createSample(selectedSlot.getProcessedSampleForPlayback(0, shortSample), selectedSlot.getProcessedSampleForPlayback(1, shortSample), selectedSlot.format);
     sample.trigger();
   }
   catch(Exception e) {
     println(e);
   }
-  pendingPlayCurrentSlot = false;
+  if (shortSample) pendingPlayCurrentSlotShort = false;
+  else pendingPlayCurrentSlot = false;
 }
