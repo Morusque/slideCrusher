@@ -70,10 +70,10 @@ void setBasicUIElements() {
     @Override
       public void execute() {
       previewSet.optimizationMethod = radioOptimizationMethod.value;
-      if (previewSet.optimizationMethod == 0) radioOptimizationMethod.description = "how to optimize the sampling time \r\ncurrent type : \r\nno optimization";
-      if (previewSet.optimizationMethod == 1) radioOptimizationMethod.description = "how to optimize the sampling time \r\ncurrent type : \r\nadd more sampling points to make sure the pre/post difference (blue zone) doesn't exeed the threshold";
-      if (previewSet.optimizationMethod == 2) radioOptimizationMethod.description = "how to optimize the sampling time \r\ncurrent type : \r\nadd more sampling points to make sure the difference between consecutive sampled points doesn't exeed the threshold";
-      if (previewSet.optimizationMethod == 3) radioOptimizationMethod.description = "how to optimize the sampling time \r\ncurrent type : \r\nadd sampling points when crossing zero, use threshold to skip zeroes";
+      if (previewSet.optimizationMethod == 0) radioOptimizationMethod.description = "how to optimize the sampling time ; current choice : \r\nno optimization";
+      if (previewSet.optimizationMethod == 1) radioOptimizationMethod.description = "how to optimize the sampling time ; current choice : \r\nadd more sampling points to make sure the pre/post difference (blue zone) doesn't exeed the threshold";
+      if (previewSet.optimizationMethod == 2) radioOptimizationMethod.description = "how to optimize the sampling time ; current choice : \r\nadd more sampling points to make sure the difference between consecutive sampled points doesn't exeed the threshold";
+      if (previewSet.optimizationMethod == 3) radioOptimizationMethod.description = "how to optimize the sampling time ; current choice : \r\nadd sampling points when crossing zero, use threshold to skip zeroes";
       updateDisplay();
       if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
