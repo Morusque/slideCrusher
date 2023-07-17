@@ -64,7 +64,7 @@ void setBasicUIElements() {
   uiElements.add(sliderDefaultMaxSlideTimeSmp);
 
   // optimizationMethod method
-  RadioButtons radioOptimizationMethod = new RadioButtons("optimizationMethod", 410, 410, 250, 20, 0, 4);
+  RadioButtons radioOptimizationMethod = new RadioButtons("optimization method", 410, 410, 250, 20, 0, 4);
   radioOptimizationMethod.setLabels(new String[]{"no", "integral", "gap", "zero"});
   radioOptimizationMethod.updateOperation = new UpdateOperation() {
     @Override

@@ -71,7 +71,6 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
     
     // optimization method 2 : check for a significant jump from one sampled value to the next
     if (pSet.optimizationMethod==2) {
-      
       // check every possible window size
       for (int j = i+1; j < i+maxSlideTimeSmp; j++) {
         slideTimeSmp = floor((float)j-i);
