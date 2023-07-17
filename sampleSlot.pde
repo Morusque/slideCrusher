@@ -122,7 +122,10 @@ class SampleSlot extends UIElement {
             break;
           }
         }
-        exportUrl = exportUrl.substring(0, lastDot)+"_processed.wav";
+        String baseExportUrl = exportUrl.substring(0, lastDot)+"_processed";
+        int incrementName = 0;
+        exportUrl = baseExportUrl+"_"+nf(incrementName++,2)+".wav";
+        while ((new File(exportUrl)).exists()) exportUrl = baseExportUrl+"_"+nf(incrementName++,2)+".wav"; 
         AudioSystem.write(outputAis, AudioFileFormat.Type.WAVE, new File(exportUrl));
       }
       catch(Exception e) {

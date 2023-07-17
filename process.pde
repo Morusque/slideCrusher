@@ -84,7 +84,7 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
       }
     }
     
-    // optimization method 3 : zero-crossing method    
+    // optimization method 3 : zero-crossing method
     if (pSet.optimizationMethod==3) {
       double previousZeroCrossed = sampleStart;
       // check longer window sizes than allowed by maxSlideTimeSmp if they're going to be divided later

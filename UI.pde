@@ -88,8 +88,8 @@ void setBasicUIElements() {
       public void execute() {
       sliderTotalDifferenceThreshold.scaledValue = sliderTotalDifferenceThreshold.value;
       previewSet.totalDifferenceThreshold = map(pow(1.0-sliderTotalDifferenceThreshold.scaledValue, 10), 0, 1, 0.00001, 50.0);
-      previewSet.zeroesToSkip = constrain(floor(map(sliderTotalDifferenceThreshold.scaledValue, 0.5, 1, 0, 10)), 0, 10);
-      previewSet.zeroesToSplit = constrain(floor(map(sliderTotalDifferenceThreshold.scaledValue, 0.5, 0, 0, 10)), 1, 10);
+      previewSet.zeroesToSkip = constrain(floor(map(sliderTotalDifferenceThreshold.scaledValue, 0.5, 0, 0, 10)), 0, 10);
+      previewSet.zeroesToSplit = constrain(floor(map(sliderTotalDifferenceThreshold.scaledValue, 0.5, 1, 0, 10)), 1, 10);
       updateDisplay();
       if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }
@@ -113,7 +113,7 @@ void setBasicUIElements() {
 
   // interpolationType
   RadioButtons radioInterpolationType = new RadioButtons("interpolation", 410, 510, 250, 20, 0, 6);
-  radioInterpolationType.setLabels(new String[]{"s&h", "lin", "s", "saw", "box", "zero"});
+  radioInterpolationType.setLabels(new String[]{"s&h", "lin", "s", "saw", "velvet", "zero"});
   radioInterpolationType.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -122,7 +122,7 @@ void setBasicUIElements() {
       if (previewSet.interpolationType == 1) radioInterpolationType.description = "current interpolation type : \r\nlinear";
       if (previewSet.interpolationType == 2) radioInterpolationType.description = "current interpolation type : \r\ns curve";
       if (previewSet.interpolationType == 3) radioInterpolationType.description = "current interpolation type : \r\nsawtooth";
-      if (previewSet.interpolationType == 4) radioInterpolationType.description = "current interpolation type : \r\nboxcar";
+      if (previewSet.interpolationType == 4) radioInterpolationType.description = "current interpolation type : \r\nvelvet noise";
       if (previewSet.interpolationType == 5) radioInterpolationType.description = "current interpolation type : \r\nzero";
       updateDisplay();
       if (selectedSlot!=null) selectedSlot.needsReprocessing = true;

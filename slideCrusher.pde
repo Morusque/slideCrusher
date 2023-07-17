@@ -219,7 +219,7 @@ void draw() {
   // if there are no sample slots, display a message to the user
   if (sampleSlots.size()==0) {
     fill(0);
-    text("drag and drop samples", 50, 30);
+    text("drag and drop .wav samples (16 bits)", 50, 30);
   }
   // label the waveforms
   fill(0, 0x50, 0);
