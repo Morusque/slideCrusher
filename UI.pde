@@ -16,7 +16,7 @@ void setBasicUIElements() {
       sliderPreviewOffset.scaledValue = sliderPreviewOffset.value;
       previewOffset = sliderPreviewOffset.scaledValue;
       if (selectedSlot!=null) previewSet.processStart = floor(selectedSlot.nSample[0].length*previewOffset);
-      if (selectedSlot!=null) previewSet.processEnd = min(previewSet.processStart+50000,selectedSlot.nSample[0].length);
+      if (selectedSlot!=null) previewSet.processEnd = min(previewSet.processStart+50000, selectedSlot.nSample[0].length);
       updateDisplay();
     }
   };
@@ -251,16 +251,18 @@ void setBasicUIElements() {
   playCurrentSlotOut.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
-      if (sample!=null) {
-        sample.stop();
-        sample.close();
-      }
-      if (selectedSlot!=null) {
-        if (selectedSlot.processedSampleAvailable()&&!selectedSlot.needsReprocessing) {
-          playCurrentSlot(false);
-        } else {
-          pendingPlayCurrentSlot = true;
-          processCurrentSlot();
+      if (!pendingPlayCurrentSlot && !pendingPlayCurrentSlotShort) {
+        if (sample!=null) {
+          sample.stop();
+          sample.close();
+        }
+        if (selectedSlot!=null) {
+          if (selectedSlot.processedSampleAvailable()&&!selectedSlot.needsReprocessing) {
+            playCurrentSlot(false);
+          } else {
+            pendingPlayCurrentSlot = true;
+            processCurrentSlot();
+          }
         }
       }
     }
@@ -280,13 +282,15 @@ void setBasicUIElements() {
   playPreview.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
-      if (sample!=null) {
-        sample.stop();
-        sample.close();
-      }
-      if (selectedSlot!=null) {
-        pendingPlayCurrentSlotShort = true;
-        processCurrentSlotShort();
+      if (!pendingPlayCurrentSlot && !pendingPlayCurrentSlotShort) {
+        if (sample!=null) {
+          sample.stop();
+          sample.close();
+        }
+        if (selectedSlot!=null) {
+          pendingPlayCurrentSlotShort = true;
+          processCurrentSlotShort();
+        }
       }
     }
   };
