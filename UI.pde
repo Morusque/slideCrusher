@@ -64,8 +64,8 @@ void setBasicUIElements() {
   uiElements.add(sliderDefaultMaxSlideTimeSmp);
 
   // optimizationMethod method
-  RadioButtons radioOptimizationMethod = new RadioButtons("optimization method", 410, 410, 250, 20, 0, 4);
-  radioOptimizationMethod.setLabels(new String[]{"no", "integral", "gap", "zero"});
+  RadioButtons radioOptimizationMethod = new RadioButtons("optimization method", 410, 410, 250, 20, 0, 5);
+  radioOptimizationMethod.setLabels(new String[]{"no", "integral", "gap", "zero", "peak"});
   radioOptimizationMethod.updateOperation = new UpdateOperation() {
     @Override
       public void execute() {
@@ -74,6 +74,7 @@ void setBasicUIElements() {
       if (previewSet.optimizationMethod == 1) radioOptimizationMethod.description = "how to optimize the sampling time ; current choice : \r\nadd more sampling points to make sure the pre/post difference (blue zone) doesn't exeed the threshold";
       if (previewSet.optimizationMethod == 2) radioOptimizationMethod.description = "how to optimize the sampling time ; current choice : \r\nadd more sampling points to make sure the difference between consecutive sampled points doesn't exeed the threshold";
       if (previewSet.optimizationMethod == 3) radioOptimizationMethod.description = "how to optimize the sampling time ; current choice : \r\nadd sampling points when crossing zero, use threshold to skip zeroes";
+      if (previewSet.optimizationMethod == 4) radioOptimizationMethod.description = "how to optimize the sampling time ; current choice : \r\nadd sampling points to reach extreme ramps";
       updateDisplay();
       if (selectedSlot!=null) selectedSlot.needsReprocessing = true;
     }

@@ -1,39 +1,40 @@
 
 ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet) {
+
   // initialize result and temporary variables
   ProcessResult result = new ProcessResult();
   double[] waveInComp = new double[waveIn.length];
   boolean[] landmarks = new boolean[waveIn.length];
-  
+
   // compress input waveform using hyperbolic tangent function
   for (int i = 0; i < waveIn.length; i++) waveInComp[i] = Math.tanh(waveIn[i]*pSet.compressionFactor);
-  
+
   double[] waveOut = new double[waveIn.length];
   double previousSample = 0;
   int zeroesSplitted = 0;
   int zeroesCrossed = 0;
-  
+
   // iterate over waveform samples
-  for (int i = 0; i < waveOut.length; ) {
+  for (int i = 0; i < waveOut.length-1; ) {
     previousSample = waveOut[max(0, i-1)];
-    
+
     // Update progress in GUI
     if (slot!=null) slot.updateProgressSample((float)i/waveOut.length);
-    
+
     double sampleStart = waveInComp[i];
     double sampleEnd = sampleStart;
     int slideTimeSmp = 1;
     float maxSlideTimeSmp = min(max(pSet.defaultMaxSlideTimeSmp, 1), waveIn.length-i);
-    
+
     // no optimization
     if (pSet.optimizationMethod==0) {
       slideTimeSmp = floor(maxSlideTimeSmp);
       sampleEnd = waveInComp[min(i+slideTimeSmp, waveIn.length-1)];
     }
-    
+
     // optimization method 1 : calculate difference between interpolated and actual samples
     if (pSet.optimizationMethod==1) {
-      
+
       // check every possible window size
       for (int j = i+1; j < i+maxSlideTimeSmp; j++) {
         double sampleMin = 1;
@@ -46,7 +47,7 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
         float totalDifference = 0;
         sampleEnd = waveInComp[j];
         double previousSampleTest = previousSample;
-        
+
         // for each sample in this window size
         for (int k = i; k < j; k++) {
           double actualSample = waveInComp[k];
@@ -68,7 +69,7 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
         }
       }
     }
-    
+
     // optimization method 2 : check for a significant jump from one sampled value to the next
     if (pSet.optimizationMethod==2) {
       // check every possible window size
@@ -82,7 +83,7 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
         }
       }
     }
-    
+
     // optimization method 3 : zero-crossing method
     if (pSet.optimizationMethod==3) {
       double previousZeroCrossed = sampleStart;
@@ -108,11 +109,38 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
         }
       }
     }
-    
+
+    // optimization method 4 : reach extreme ramps
+    if (pSet.optimizationMethod==4) {
+      // check every possible window size
+      int bestIndex = -1;
+      float maxDiff = 0;
+      for (int j = i+1; j < i+maxSlideTimeSmp; j++) {
+        slideTimeSmp = j-i;
+        sampleEnd = waveInComp[j];
+        float thisDiff = abs((float)sampleEnd-(float)sampleStart);
+        if (thisDiff>maxDiff) {
+          maxDiff = thisDiff;
+          bestIndex = j;
+        }
+      }
+      if (bestIndex>0) {
+        if (zeroesCrossed >= pSet.zeroesToSkip) {
+          zeroesCrossed = 0;
+          slideTimeSmp = bestIndex-i;
+          slideTimeSmp = ceil((float)slideTimeSmp/pSet.zeroesToSplit);
+        } else {
+          zeroesCrossed++;
+        }
+      }
+      slideTimeSmp = min(slideTimeSmp, waveIn.length-i-1);
+      sampleEnd = waveInComp[i+slideTimeSmp];
+    }
+
     // uncompress the sample end value
     sampleStart = waveIn[i];
     sampleEnd   = atanh(sampleEnd)/pSet.compressionFactor;
-    
+
     // find min and max of the original waveIn for this slice
     double sampleMin = 1;
     double sampleMax = -1;
@@ -120,7 +148,7 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
       sampleMin = min((float)sampleMin, (float)waveIn[k]);
       sampleMax = max((float)sampleMax, (float)waveIn[k]);
     }
-    
+
     // interpolate, filter and constrain the final waveform slice
     for (int k = i; k < i+slideTimeSmp; k ++) {
       landmarks[k] = (k==i);
@@ -136,11 +164,11 @@ ProcessResult computeInterp(double[] waveIn, SampleSlot slot, ParameterSet pSet)
       if (waveOut[k]>+1) waveOut[k]=+1;
       if (waveOut[k]<-1) waveOut[k]=-1;
     }
-    
+
     // proceed to next slice
     i+=slideTimeSmp;
   }
-  
+
   // fill result with the final processed waveform and landmarks
   result.nSampleProcessed = waveOut;
   result.landmarks = landmarks;
